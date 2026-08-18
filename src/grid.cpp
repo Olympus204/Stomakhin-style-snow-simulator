@@ -57,6 +57,36 @@ double N_dash(const double& grid_node, const double& particle_coordinate)
     return 0.0;
 }
 
+Eigen::Matrix3d constitutive_differential(const Particle& particle, const Eigen::Matrix3d& delta_f, double mu_0, double lambda_0, double hardening_coefficient)
+{
+    Eigen::Matrix3d F = particle.F_E;
+    double J = F.determinant();
+    Eigen::Matrix3d C = J * F.inverse().transpose();
+    double delta_J = C.cwiseProduct(delta_f).sum();
+    Eigen::Matrix3d delta_C = delta_J * F.inverse().transpose() - J * F.inverse().transpose() * delta_f.transpose() * F.inverse().transpose();
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    Eigen::Vector3d sigma = svd.singularValues();
+    Eigen::Matrix3d B = U.transpose() * delta_f * V;
+    Eigen::Matrix3d omega = Eigen::Matrix3d::Zero();
+    double omega_01 = (B(0,1) - B(1,0)) / (sigma(0) + sigma(1));
+    double omega_02 = (B(0,2) - B(2,0)) / (sigma(0) + sigma(2));
+    double omega_12 = (B(1,2) - B(2,1)) / (sigma(1) + sigma(2));
+    omega(0,1) = omega_01;
+    omega(1,0) = -omega_01;
+    omega(0,2) = omega_02;
+    omega(2,0) = -omega_02;
+    omega(1,2) = omega_12;
+    omega(2,1) = -omega_12;
+    Eigen::Matrix3d delta_R = U * omega * V.transpose();
+    double h = exp(hardening_coefficient * (1 - particle.F_P.determinant()));
+    double mu = mu_0 * h;
+    double lambda = lambda_0 * h;
+    Eigen::Matrix3d delta_P = 2 * mu * delta_f - 2 * mu * delta_R + lambda * C * delta_J + lambda * (J - 1) * delta_C;
+    return delta_P;
+}
+
 ParticleStencil build_stencil(const Particle& particle, double grid_spacing)
 {
     ParticleStencil stencil;
@@ -133,6 +163,28 @@ void P2G(Grid& grid, const Particle& particle, double grid_spacing)
     ParticleStencil stencil = build_stencil( particle, grid_spacing);
 
     P2G(grid, particle, stencil, grid_spacing);
+}
+
+std::vector<GridNode*> index_nodes(Grid& grid)
+{
+    std::vector<GridIndex> indices;
+    indices.reserve(grid.size());
+    for (const auto& [index, node] : grid)
+    {
+        indices.push_back(index);
+    }
+    std::sort(indices.begin(), indices.end());
+    std::vector<GridNode*> krylov_nodes;
+    krylov_nodes.reserve(indices.size());
+    for (const GridIndex& index : indices)
+    {
+        auto it = grid.find(index);
+        if (it != grid.end())
+        {
+            krylov_nodes.push_back(&it->second);
+        }
+    }
+    return krylov_nodes;
 }
 
 void calculate_volume (Grid& grid, Particle& particle, double grid_spacing)
@@ -283,6 +335,98 @@ void stress_update(const Grid& grid, Particle& particle, double grid_spacing, do
     sigma[2] = std::clamp(sigma[2], 1 - max_compression, 1 + max_stretch);
     particle.F_E = svd.matrixU() * sigma.asDiagonal() * svd.matrixV().transpose();
     particle.F_P = particle.F_E.inverse() * F_trial;
+}
+
+Eigen::Matrix3d deformation_differential(const Grid& grid, const Particle& particle, double grid_spacing, double time_step)
+{
+    Eigen::Vector3d grid_position = particle.x_p / grid_spacing;
+    Eigen::Vector3i base = grid_position.array().floor().cast<int>() - Eigen::Vector3i::Ones().array();
+    Eigen::Matrix3d delta_velocity_gradient = Eigen::Matrix3d::Zero();
+    for (int i{0}; i < 4; ++i)
+    {
+        for (int j{0}; j < 4; ++j)
+        {
+            for (int k{0}; k < 4; ++k)
+            {
+                GridIndex index{i + base[0], j + base[1], k + base[2]};
+                auto it = grid.find(index);
+                if (it == grid.end())
+                {
+                    continue;
+                }
+                const GridNode& node = it->second;
+                Eigen::Vector3d basis_gradient = Eigen::Vector3d::Zero();
+                double N_x = N(index.i, grid_position[0]);
+                double N_y = N(index.j, grid_position[1]);
+                double N_z = N(index.k, grid_position[2]);
+                double N_dash_x = N_dash(index.i, grid_position[0]);
+                double N_dash_y = N_dash(index.j, grid_position[1]);
+                double N_dash_z = N_dash(index.k, grid_position[2]);
+                basis_gradient(0) = N_dash_x * N_y * N_z * (1/grid_spacing);
+                basis_gradient(1) = N_x * N_dash_y * N_z * (1/grid_spacing);
+                basis_gradient(2) = N_x * N_y * N_dash_z * (1/grid_spacing);
+                delta_velocity_gradient += node.delta_v * basis_gradient.transpose();
+            }
+        }
+    }
+    return time_step * delta_velocity_gradient * particle.F_E;
+}
+
+void force_differential(Grid& grid, const Particle& particle, double grid_spacing, double time_step, double mu_0, double lambda_0, double hardening_coefficient)
+{
+    Eigen::Matrix3d delta_F_p = deformation_differential(grid, particle, grid_spacing, time_step);
+    Eigen::Matrix3d delta_P_p = constitutive_differential(particle, delta_F_p, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Vector3d grid_position = particle.x_p / grid_spacing;
+    Eigen::Vector3i base = grid_position.array().floor().cast<int>() - Eigen::Vector3i::Ones().array();
+    for (int i{0}; i < 4; ++i)
+    {
+        for (int j{0}; j < 4; ++j)
+        {
+            for (int k{0}; k < 4; ++k)
+            {
+                GridIndex index{i + base[0], j + base[1], k + base[2]};
+                auto it = grid.find(index);
+                if (it == grid.end())
+                {
+                    continue;
+                }
+                GridNode& node = it->second;
+                Eigen::Vector3d basis_gradient = Eigen::Vector3d::Zero();
+                double N_x = N(index.i, grid_position[0]);
+                double N_y = N(index.j, grid_position[1]);
+                double N_z = N(index.k, grid_position[2]);
+                double N_dash_x = N_dash(index.i, grid_position[0]);
+                double N_dash_y = N_dash(index.j, grid_position[1]);
+                double N_dash_z = N_dash(index.k, grid_position[2]);
+                basis_gradient(0) = N_dash_x * N_y * N_z * (1/grid_spacing);
+                basis_gradient(1) = N_x * N_dash_y * N_z * (1/grid_spacing);
+                basis_gradient(2) = N_x * N_y * N_dash_z * (1/grid_spacing);
+                node.delta_force += -particle.V_p0 * delta_P_p * particle.F_E.transpose() * basis_gradient;
+            }
+        }
+    }
+}
+
+KrylovVector apply_A(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, const KrylovVector& q, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta)
+{
+    assert(q.size() == krylov_nodes.size());
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        krylov_nodes[i]->delta_v = q[i];
+        krylov_nodes[i]->delta_force = Eigen::Vector3d::Zero();
+    }
+    for (const Particle& particle : snow)
+    {
+        force_differential(grid, particle, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent);
+    }
+    KrylovVector Aq(krylov_nodes.size(), Eigen::Vector3d::Zero());
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+
+        Aq[i] = node.mass * q[i] - beta * time_step * node.delta_force;
+    }
+    return Aq;
 }
 
 void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha)
@@ -451,3 +595,4 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
 
     return grid;
 }
+
