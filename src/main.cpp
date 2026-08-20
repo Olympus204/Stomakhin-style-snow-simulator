@@ -36,7 +36,7 @@ int main()
     colliders.push_back(make_plane({0,0,0},{0,1,0}, 1));
     Eigen::Vector3d gravity{0,-10,0};
     std::vector<ParticleStencil> stencils(particles.size());
-    setup(particles, 0.05);
+    setup(particles, grid_spacing);
     export_particles(particles, 0);
     for (int frame{1}; frame <= frame_count; ++frame)
     {
@@ -53,7 +53,7 @@ int main()
         double frame_time = std::chrono::duration<double, std::milli>(frame_end - frame_start).count();
         std::cout << "Frame " << frame << ": " << frame_time << "ms\n";
         double unnacounted_time = print_timings(timings);
-        std::cout << "Unacounted for time: " << frame_time - unnacounted_time << "ms \n" << '\n';
+        std::cout << "Unacounted time: " << frame_time - unnacounted_time << "ms \n" << '\n';
         export_particles(particles, frame);
     }
 }
