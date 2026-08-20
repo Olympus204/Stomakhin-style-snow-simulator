@@ -356,7 +356,7 @@ void setup(std::vector<Particle>& snow, double grid_spacing)
 
 }
 
-Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings)
+void step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings)
 {
     Grid grid;
     grid.reserve(170000);
@@ -448,6 +448,4 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
     auto end_position_update = std::chrono::steady_clock::now();
 
     timings.position_update += std::chrono::duration<double, std::milli>(end_position_update - start_position_update).count();
-
-    return grid;
 }
