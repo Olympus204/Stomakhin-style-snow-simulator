@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        build_type:
+          - Debug
+          - Release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libeigen3-dev
+
+      - name: Configure
+        run: |
+          cmake \
+            -S . \
+            -B build-${{ matrix.build_type }} \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Build
+        run: |
+          cmake --build build-${{ matrix.build_type }}
+
+      - name: Run tests
+        run: |
+          ctest \
+            --test-dir build-${{ matrix.build_type }} \
+            --output-on-failure
