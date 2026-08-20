@@ -5,9 +5,7 @@ from pathlib import Path
 from mathutils import Vector
 
 
-# ============================================================
 # Per-object settings
-# ============================================================
 
 class SnowGroupSettings(bpy.types.PropertyGroup):
     enabled: bpy.props.BoolProperty(
@@ -35,9 +33,7 @@ class SnowGroupSettings(bpy.types.PropertyGroup):
     )
 
 
-# ============================================================
 # Geometry helpers
-# ============================================================
 
 def world_bounds(obj):
     corners = [
@@ -122,9 +118,7 @@ def get_project_root():
 
     return blend_directory.parent
 
-# ============================================================
 # Coordinate conversion
-# ============================================================
 
 def blender_to_solver(vector):
     return Vector((
@@ -161,7 +155,7 @@ def export_groups(
         "w",
         newline=""
     ) as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
 
         writer.writerow([
             "group_id",
