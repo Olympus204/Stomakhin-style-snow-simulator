@@ -94,4 +94,4 @@ void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha
 void particle_collisions(Particle& particle, const std::vector<CollisionBody> & colliders);
 void position_update(Particle& particle, double time_step);
 void setup(std::vector<Particle>& snow, double grid_spacing);
-Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings);
+void step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings);
