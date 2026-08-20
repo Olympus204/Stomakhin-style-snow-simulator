@@ -5,10 +5,39 @@ from pathlib import Path
 from mathutils import Vector
 
 
-GROUP_ID = 0
-VELOCITY = (0.0, -5.0, 0.0)
-MASS = 1.0
-SPACING = 0.25
+# ============================================================
+# Per-object settings
+# ============================================================
+
+class SnowGroupSettings(bpy.types.PropertyGroup):
+    enabled: bpy.props.BoolProperty(
+        name="Snow Group",
+        default=False,
+    )
+
+    velocity: bpy.props.FloatVectorProperty(
+        name="Velocity",
+        size=3,
+        default=(0.0, 0.0, 0.0),
+        subtype="VELOCITY",
+    )
+
+    mass: bpy.props.FloatProperty(
+        name="Particle Mass",
+        default=0.05,
+        min=0.000001,
+    )
+
+    spacing: bpy.props.FloatProperty(
+        name="Particle Spacing",
+        default=0.05,
+        min=0.0001,
+    )
+
+
+# ============================================================
+# Geometry helpers
+# ============================================================
 
 def world_bounds(obj):
     corners = [
@@ -30,12 +59,15 @@ def world_bounds(obj):
 
     return min_corner, max_corner
 
+
 def point_inside_mesh(obj, world_point):
     inverse = obj.matrix_world.inverted()
 
     local_point = inverse @ world_point
 
-    direction = Vector((1.0, 0.371, 0.529)).normalized()
+    direction = Vector(
+        (1.0, 0.371, 0.529)
+    ).normalized()
 
     intersections = 0
     origin = local_point.copy()
@@ -55,53 +87,6 @@ def point_inside_mesh(obj, world_point):
 
     return intersections % 2 == 1
 
-def get_project_root():
-    blend_directory = Path(bpy.path.abspath("//"))
-    return blend_directory.parent
-
-
-def get_selected_mesh():
-    obj = bpy.context.active_object
-
-    if obj is None:
-        raise RuntimeError("No active object selected")
-
-    if obj.type != "MESH":
-        raise RuntimeError(
-            f"Selected object '{obj.name}' is not a mesh"
-        )
-        
-def blender_to_solver(position):
-    return Vector((
-        position.x,
-        position.z,
-        -position.y,
-    ))
-
-    return obj
-
-def export_group(output_directory):
-    group_path = output_directory / "groups.csv"
-
-    with group_path.open("w", newline="") as file:
-        writer = csv.writer(file)
-
-        writer.writerow([
-            "group_id",
-            "vx",
-            "vy",
-            "vz",
-            "mass",
-        ])
-        solver_VELOCITY = blender_to_solver(VELOCITY)
-
-        writer.writerow([
-            GROUP_ID,
-            solver_VELOCITY[0],
-            solver_VELOCITY[1],
-            solver_VELOCITY[2],
-            MASS,
-        ])
 
 def seed_mesh(obj, spacing):
     min_corner, max_corner = world_bounds(obj)
@@ -130,11 +115,95 @@ def seed_mesh(obj, spacing):
 
     return positions
 
-        
-def export_vertices(obj, output_directory):
-    particle_path = output_directory / "particles.csv"
+def get_project_root():
+    blend_directory = Path(
+        bpy.path.abspath("//")
+    )
 
-    with particle_path.open("w", newline="") as file:
+    return blend_directory.parent
+
+# ============================================================
+# Coordinate conversion
+# ============================================================
+
+def blender_to_solver(vector):
+    return Vector((
+        vector.x,
+        vector.z,
+        -vector.y,
+    ))
+    
+def get_snow_groups(context):
+    objects = [
+        obj
+        for obj in context.scene.objects
+        if (
+            obj.type == "MESH"
+            and obj.snow_settings.enabled
+        )
+    ]
+
+    objects.sort(
+        key=lambda obj: obj.name
+    )
+
+    return objects
+
+def export_groups(
+    objects,
+    output_directory
+):
+    group_path = (
+        output_directory / "groups.csv"
+    )
+
+    with group_path.open(
+        "w",
+        newline=""
+    ) as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "group_id",
+            "vx",
+            "vy",
+            "vz",
+            "mass",
+        ])
+
+        for group_id, obj in enumerate(objects):
+            settings = obj.snow_settings
+
+            blender_velocity = Vector(
+                settings.velocity
+            )
+
+            solver_velocity = blender_to_solver(
+                blender_velocity
+            )
+
+            writer.writerow([
+                group_id,
+                solver_velocity.x,
+                solver_velocity.y,
+                solver_velocity.z,
+                settings.mass,
+            ])
+            
+def export_particles(
+    objects,
+    output_directory
+):
+    particle_path = (
+        output_directory / "particles.csv"
+    )
+
+    total_particles = 0
+
+    with particle_path.open(
+        "w",
+        newline=""
+    ) as file:
         writer = csv.writer(file)
 
         writer.writerow([
@@ -144,38 +213,192 @@ def export_vertices(obj, output_directory):
             "z",
         ])
 
-        positions = seed_mesh(obj, SPACING)
+        for group_id, obj in enumerate(objects):
+            settings = obj.snow_settings
 
-        for position in positions:
-            solver_position = blender_to_solver(position)
-            
-            writer.writerow([
-                GROUP_ID,
-                solver_position.x,
-                solver_position.y,
-                solver_position.z,
-            ])
-            
-            
-def main():
-    project_root = get_project_root()
-    output_directory = project_root / "input"
+            positions = seed_mesh(
+                obj,
+                settings.spacing
+            )
 
-    output_directory.mkdir(
-        parents=True,
-        exist_ok=True
+            for position in positions:
+                solver_position = blender_to_solver(
+                    position
+                )
+
+                writer.writerow([
+                    group_id,
+                    solver_position.x,
+                    solver_position.y,
+                    solver_position.z,
+                ])
+
+            total_particles += len(positions)
+
+            print(
+                f"Group {group_id} "
+                f"'{obj.name}': "
+                f"{len(positions)} particles"
+            )
+
+    return total_particles
+
+class SNOW_OT_export_groups(
+    bpy.types.Operator
+):
+    bl_idname = "snow.export_groups"
+    bl_label = "Export Snow Groups"
+    bl_description = (
+        "Seed and export all selected "
+        "enabled snow meshes"
     )
 
-    obj = get_selected_mesh()
+    def execute(self, context):
+        objects = get_snow_groups(
+            context
+        )
 
-    export_group(output_directory)
-    export_vertices(obj, output_directory)
+        if not objects:
+            self.report(
+                {"ERROR"},
+                "No enabled snow mesh objects selected"
+            )
 
-    print(
-        f"Exported seed data from '{obj.name}' "
-        f"to {output_directory}"
+            return {"CANCELLED"}
+
+        project_root = get_project_root()
+
+        output_directory = (
+            project_root / "input"
+        )
+
+        output_directory.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        export_groups(
+            objects,
+            output_directory
+        )
+
+        total_particles = export_particles(
+            objects,
+            output_directory
+        )
+
+        self.report(
+            {"INFO"},
+            (
+                f"Exported {len(objects)} groups "
+                f"with {total_particles} particles"
+            )
+        )
+
+        return {"FINISHED"}
+    
+class SNOW_PT_export_panel(
+    bpy.types.Panel
+):
+    bl_label = "Snow Simulator"
+    bl_idname = "SNOW_PT_export_panel"
+
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Snow Simulator"
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+
+        if obj is not None and obj.type == "MESH":
+            settings = obj.snow_settings
+
+            layout.prop(
+                settings,
+                "enabled"
+            )
+
+            column = layout.column()
+            column.enabled = settings.enabled
+
+            column.prop(
+                settings,
+                "velocity"
+            )
+
+            column.prop(
+                settings,
+                "mass"
+            )
+
+            column.prop(
+                settings,
+                "spacing"
+            )
+
+        else:
+            layout.label(
+                text="Select a mesh to edit its settings"
+            )
+
+        layout.separator()
+
+        groups = get_snow_groups(context)
+    
+        layout.label(
+            text=f"Groups to Export ({len(groups)}):"
+        )
+
+        box = layout.box()
+
+        if not groups:
+            box.label(text="None")
+
+        else:
+            for group_id, group in enumerate(groups):
+                box.label(
+                    text=f"{group_id}: {group.name}"
+                )
+
+        layout.separator()
+
+        if len(groups) == 1:
+            button_text = "Export 1 Snow Group"
+        else:
+            button_text = (
+                f"Export {len(groups)} Snow Groups"
+            )
+
+        layout.operator(
+            "snow.export_groups",
+            text=button_text
+        )
+        
+classes = (
+    SnowGroupSettings,
+    SNOW_OT_export_groups,
+    SNOW_PT_export_panel,
+)
+
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+    bpy.types.Object.snow_settings = (
+        bpy.props.PointerProperty(
+            type=SnowGroupSettings
+        )
     )
+
+
+def unregister():
+    del bpy.types.Object.snow_settings
+
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
 
 
 if __name__ == "__main__":
-    main()
+    register()
