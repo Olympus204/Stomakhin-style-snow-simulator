@@ -198,7 +198,7 @@ def export_particles(
         "w",
         newline=""
     ) as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
 
         writer.writerow([
             "group_id",
