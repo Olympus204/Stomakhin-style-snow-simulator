@@ -127,7 +127,7 @@ body impacting a rigid ground plane. The asymmetric initial geometry makes
 compression, shear and permanent deformation easier to observe than with a
 symmetric sphere.
 
-<!-- Hero simulation GIF -->
+![3D MPM snow simulation](assets/donut-demo.gif)
 
 The current constitutive model does not include fracture, so material remains
 cohesive under high deformation rather than breaking into separate fragments.
