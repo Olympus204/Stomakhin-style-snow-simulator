@@ -18,10 +18,10 @@ int main()
 
 // 80 x 0.0005 is 0.04 seconds, which is 25 fps
     
-    double Youngs_modulus{4.8e5};
+    double Youngs_modulus{2.5e5};
     double Poisson_ratio{0.2};
     constexpr double hardening = 10.0;
-    constexpr double max_compression = 0.025;
+    constexpr double max_compression = 0.015;
     constexpr double max_stretch = 0.0075;
     constexpr double flip_ratio = 0.95;
 
@@ -54,7 +54,7 @@ int main()
         double frame_time = std::chrono::duration<double, std::milli>(frame_end - frame_start).count();
         std::cout << "Frame " << frame << ": " << frame_time << "ms\n";
         double unnacounted_time = print_timings(timings);
-        std::cout << "Unacounted for time: " << frame_time - unnacounted_time << "ms \n";
+        std::cout << "Unacounted for time: " << frame_time - unnacounted_time << "ms \n" << '\n';
         export_particles(particles, frame);
     }
 }
