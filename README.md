@@ -122,10 +122,7 @@ Blender playback / rendering
 The solver produces permanent plastic deformation under impact while retaining
 a coherent three-dimensional particle body.
 
-The example scene included with the repository uses a tilted, elongated snow
-body impacting a rigid ground plane. The asymmetric initial geometry makes
-compression, shear and permanent deformation easier to observe than with a
-symmetric sphere.
+The second example uses two independently seeded toroidal snow bodies colliding at high relative velocity, producing substantial compression, shear and permanent plastic deformation.
 
 ![3D MPM snow simulation](assets/donut-demo.gif)
 
@@ -168,7 +165,7 @@ Run the example simulation:
 ```bash
 ./build/snow_sim
 ```
-simulation frames are written to `output/`
+Simulation frames are written to `output/`.
 
 ## Tests
 
