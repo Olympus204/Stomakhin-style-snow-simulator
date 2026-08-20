@@ -359,7 +359,6 @@ void setup(std::vector<Particle>& snow, double grid_spacing)
 void step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings)
 {
     Grid grid;
-    grid.reserve(170000);
 
     auto start_stencil = std::chrono::steady_clock::now();
     #pragma omp parallel for schedule(static)
