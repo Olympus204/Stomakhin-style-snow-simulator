@@ -116,7 +116,7 @@ ParticleStencil build_stencil(const Particle& particle, double grid_spacing)
     return stencil;
 }
 
-void P2G(Grid& grid, const Particle& particle, ParticleStencil& stencil, double grid_spacing)
+void P2G(Grid& grid, const Particle& particle, ParticleStencil& stencil)
 {
     const Eigen::Vector3d particle_momentum = particle.m_p * particle.v_p;
     for (StencilEntry& entry : stencil)
@@ -132,7 +132,7 @@ void P2G(Grid& grid, const Particle& particle, double grid_spacing)
 {
     ParticleStencil stencil = build_stencil( particle, grid_spacing);
 
-    P2G(grid, particle, stencil, grid_spacing);
+    P2G(grid, particle, stencil);
 }
 
 void calculate_volume (Grid& grid, Particle& particle, double grid_spacing)
@@ -171,7 +171,7 @@ Eigen::Matrix3d force_constitutive(const Particle& particle, double mu_0, double
     return dphidF_E;
 }
 
-void force_grid_accumulation(Grid& grid, const Eigen::Matrix3d& dphidF_E, const Particle& particle, const ParticleStencil& stencil)
+void force_grid_accumulation(const Eigen::Matrix3d& dphidF_E, const Particle& particle, const ParticleStencil& stencil)
 {
     Eigen::Matrix3d force_matrix = -particle.V_p0 * dphidF_E * particle.F_E.transpose();
     for (const StencilEntry& entry : stencil)
@@ -189,7 +189,7 @@ void force_calculation(Grid& grid,const Particle& particle,double grid_spacing,d
     {
         entry.node = &grid[entry.index];
     }
-    force_grid_accumulation(grid,stress,particle, stencil);
+    force_grid_accumulation(stress,particle, stencil);
 }
 
 void grid_velocity(Grid& grid, const Eigen::Vector3d gravity, const double time_step)
@@ -347,7 +347,7 @@ void setup(std::vector<Particle>& snow, double grid_spacing)
     }
     for (std::size_t j{0}; j < snow.size(); ++j)
     {
-        P2G(grid, snow[j], stencils[j], grid_spacing);
+        P2G(grid, snow[j], stencils[j]);
     }
     for (Particle& particle : snow)
     {
@@ -374,7 +374,7 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
     auto start_P2G = std::chrono::steady_clock::now();
     for (std::size_t i{0}; i < snow.size(); ++i)
     {
-        P2G(grid, snow[i], stencils[i], grid_spacing);
+        P2G(grid, snow[i], stencils[i]);
     }
     auto end_P2G = std::chrono::steady_clock::now();
 
@@ -393,7 +393,7 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
     auto start_forces_accumulative = std::chrono::steady_clock::now();
     for (std::size_t i{0}; i < snow.size(); ++i)
     {
-        force_grid_accumulation(grid, stress_matrices[i], snow[i], stencils[i]);
+        force_grid_accumulation(stress_matrices[i], snow[i], stencils[i]);
     }
     auto end_forces_accumulative = std::chrono::steady_clock::now();
 

@@ -16,7 +16,7 @@ int main()
     constexpr int substeps_per_frame = 80;
     constexpr int frame_count = 50;
 
-// 80 x 0.0005 is 0.4 seconds, which is 25 fps
+// 80 x 0.0005 is 0.04 seconds, which is 25 fps
     
     double Youngs_modulus{4.8e5};
     double Poisson_ratio{0.2};

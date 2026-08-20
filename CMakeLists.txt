@@ -18,35 +18,26 @@ add_library(snow_core
     src/debug.cpp
 )
 
+target_include_directories(snow_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(snow_core PUBLIC
+    Eigen3::Eigen
+    OpenMP::OpenMP_CXX
+)
+
+target_compile_options(snow_core PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+)
+
 add_executable(snow_sim src/main.cpp)
 target_link_libraries(snow_sim PRIVATE snow_core)
 
-target_include_directories(snow_sim PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(snow_sim PRIVATE Eigen3::Eigen OpenMP::OpenMP_CXX)
-
-target_compile_options(snow_sim PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-)
-
 add_executable(snow_tests tests/snow_tests.cpp)
 target_link_libraries(snow_tests PRIVATE snow_core)
-
-target_include_directories(snow_tests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(snow_tests PRIVATE Eigen3::Eigen OpenMP::OpenMP_CXX)
-
-target_compile_options(snow_tests PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-)
 
 enable_testing()
 add_test(NAME snow_tests COMMAND snow_tests)

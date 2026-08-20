@@ -1,7 +1,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <map>
-#include <cassert>
+#include <stdexcept>
 
 #include "snow/grid.hpp"
 #include "snow/particle.hpp"
@@ -103,7 +103,7 @@ void translation_test()
     Particle particle_b{{2.65,3.35,4.65}, {1,2,3}, 1, 1};
     P2G(grid_a, particle_a, 0.5);
     P2G(grid_b, particle_b, 0.5);
-    assert(grid_a.size() == grid_b.size());
+    require(grid_a.size() == grid_b.size(), "translation grid size error");
     for (const auto& [index, node] : grid_a)
     {
         GridIndex translated_grid = {
@@ -113,7 +113,7 @@ void translation_test()
         };
         if (grid_b.find(translated_grid) == grid_b.end())
         {
-            assert(false);
+            require(false, "grid translation error");
         }
         require(difference(node.mass, grid_b.find(translated_grid)->second.mass) < 1e-10, "P2G translation mass error");
         Eigen::Vector3d momentum_difference = node.momentum - grid_b.find(translated_grid)->second.momentum;
@@ -296,8 +296,8 @@ void plastic_test()
     Eigen::Matrix3d plastic_change = particle.F_P - target_F_P;
     Eigen::Matrix3d Trial_f_change = particle.F_E * particle.F_P - trial_F;
     require(elastic_change.norm() < 1e-10, "plastic test elastic error");
-    assert(plastic_change.norm() < 1e-10, "plastic test plastic error");
-    assert(Trial_f_change.norm() < 1e-10, "plastic test trial f error");
+    require(plastic_change.norm() < 1e-10, "plastic test plastic error");
+    require(Trial_f_change.norm() < 1e-10, "plastic test trial f error");
 }
 
 void linear_velocity_field_test()
@@ -323,7 +323,7 @@ void linear_velocity_field_test()
     Eigen::Matrix3d elastic_change = particle.F_E - target_F_E;
     Eigen::Matrix3d plastic_change = particle.F_P - target_F_P;
     require(elastic_change.norm() < 1e-10, "linear velocity field elastic error");
-    assert(plastic_change.norm() < 1e-10, "linear velocity field plastic error");
+    require(plastic_change.norm() < 1e-10, "linear velocity field plastic error");
 }
 
 void G2P_test()
