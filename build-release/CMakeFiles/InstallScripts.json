@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/gwen/Code/snow-simulator/build-release/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

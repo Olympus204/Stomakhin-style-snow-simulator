@@ -658,6 +658,75 @@ void Aq_symmetry_test()
     assert(abs(L - R) < 1e-10);
 }
 
+void CR_initial_residual_zero_test()
+{
+    double mu_0 = 0;
+    double lambda_0 = 0;
+    Grid grid;
+    std::vector<Particle> snow;
+    snow.push_back({{0,0,0}, {0,0,0}, 1, 0});
+    P2G(grid, snow[0], 0.1);
+    for (auto& [index, node] : grid)
+    {
+        node.mass = 1;
+        node.velocity = {0,1,0};
+    }
+    std::vector<GridNode*> krylov_nodes = index_nodes(grid);
+    Conjugate_residual(grid, snow, krylov_nodes, 0.1, 0.1, mu_0, lambda_0, 0, 0.5, 1e-3, 50);
+    for (auto& [index, node] : grid)
+    {
+        assert((node.velocity - Eigen::Vector3d{0,1,0}).norm() < 1e-10);
+    }
+}
+
+void CR_non_trivial_test()
+{
+    double mu_0 = 2.0;
+    double lambda_0 = 3.0;
+    Grid grid;
+    std::vector<Particle> snow;
+    snow.push_back({{0.15,0.15,0.15}, {0,0,0}, 1, 0.01});
+    snow[0].F_E << 
+        1.05, 0, 0,
+        0, 0.97, 0,
+        0, 0, 1.02;
+    P2G(grid, snow[0], 0.1);
+    std::vector<GridNode*> krylov_nodes = index_nodes(grid);
+    KrylovVector b;
+    for (auto& [index, node] : grid)
+    {
+        node.mass = 1;
+        node.velocity = {0.3 * 0.1 * index.i, -0.2 * 0.1 * index.j, 0.1 * 0.1 * index.k};
+    }
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        b.push_back(node.velocity);
+    }
+    double R_squared_zero{0.0};
+    KrylovVector Ab = apply_A(grid, snow, krylov_nodes, b, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        R_squared_zero += (b[i] - Ab[i]).dot(b[i] - Ab[i]);
+    }
+    assert(R_squared_zero > 1e-10);
+
+    Conjugate_residual(grid, snow, krylov_nodes, 0.1, 0.1, mu_0, lambda_0, 0, 0.5, 1e-12, 200);
+    KrylovVector x;
+    double R_squared{0.0};
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        x.push_back(node.velocity);
+    }
+    KrylovVector Ax = apply_A(grid, snow, krylov_nodes, x, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        R_squared += (b[i] - Ax[i]).dot(b[i] - Ax[i]);
+    }
+    assert(R_squared < 1e-12);
+}
+
 void G2P_test()
 {
     Grid grid;
@@ -767,6 +836,8 @@ int main()
     run_test("Aq test", Aq_test);
     run_test("Aq linear test", Aq_linear_test);
     run_test("Aq symmetry test", Aq_symmetry_test);
+    run_test("CR initial residual zero test", CR_initial_residual_zero_test);
+    run_test("CR non trivial test", CR_non_trivial_test);
     run_test("G2P test", G2P_test);
     run_test("FLIP and PIC blend test", FLIP_PIC_test);
     run_test("Outside collider particle test", collision_outside_particle_test);

@@ -28,7 +28,7 @@ int main()
     setup(particles, 0.05);
     export_particles(particles, 0);
     Grid grid;
-    for (int frame{1}; frame < 51; ++frame)
+    for (int frame{1}; frame < 251; ++frame)
     {
         StepTimings timings;
         auto frame_start = std::chrono::steady_clock::now();

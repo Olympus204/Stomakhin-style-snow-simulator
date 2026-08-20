@@ -1,0 +1,4 @@
+/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir
+/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir
+/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/edit_cache.dir
+/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/rebuild_cache.dir

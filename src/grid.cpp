@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cassert>
+#include <iostream>
 
 namespace
 {
@@ -255,7 +256,7 @@ void grid_velocity(Grid& grid, const Eigen::Vector3d gravity, const double time_
     }
 }
 
-Eigen::Vector3d collision_helper(const Eigen::Vector3d& position, const Eigen::Vector3d& velocity, const CollisionBody& body)
+Eigen::Vector3d collision_helper(const Eigen::Vector3d& position, const Eigen::Vector3d& velocity, const CollisionBody& body, bool& constrained)
 {
     double signed_distance = body.phi(position);
     if (signed_distance <= 0)
@@ -266,6 +267,7 @@ Eigen::Vector3d collision_helper(const Eigen::Vector3d& position, const Eigen::V
         double v_n = v_rel.dot(n);
         if (v_n < 0)
         {
+            constrained = true;
             Eigen::Vector3d v_t = v_rel - v_n * n;
             Eigen::Vector3d v_dash_rel{};
             if (v_t.norm() <= -1 * body.friction * v_n)
@@ -286,10 +288,11 @@ void grid_collisions(Grid& grid, const std::vector<CollisionBody>& collisions, d
 {
     for (auto& [index, node] : grid)
     {
+        node.colision_constrained = false;
         Eigen::Vector3d real_position = {grid_spacing * index.i, grid_spacing * index.j, grid_spacing * index.k};
         for (const CollisionBody& body : collisions)
         {   
-            node.velocity = collision_helper(real_position, node.velocity, body);
+            node.velocity = collision_helper(real_position, node.velocity, body, node.colision_constrained);
         }
     }
 }
@@ -429,6 +432,78 @@ KrylovVector apply_A(Grid& grid, const std::vector<Particle>& snow, const std::v
     return Aq;
 }
 
+void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta, double squared_tolerance, int maximum_iterations)
+{
+    KrylovVector x;
+    KrylovVector b;
+    KrylovVector r;
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        x.push_back(node.velocity);
+        b.push_back(node.mass * node.velocity);
+    }
+    KrylovVector Ax = apply_A(grid, snow, krylov_nodes, x, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+    double r_squared_norm{0.0};
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        r.push_back(b[i] - Ax[i]);
+        r_squared_norm += r[i].dot(r[i]);
+    }
+    KrylovVector p = r;
+    KrylovVector Ap = apply_A(grid, snow, krylov_nodes, p, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+    int iterations{0};
+    while (r_squared_norm > squared_tolerance and iterations < maximum_iterations)
+    {
+        double r_dot_Ap{0.0};
+        double Ap_dot_Ap{0.0};
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            r_dot_Ap += r[i].dot(Ap[i]);
+            Ap_dot_Ap += Ap[i].dot(Ap[i]);
+        }
+        assert(Ap_dot_Ap > 1e-12);
+        double alpha = r_dot_Ap / Ap_dot_Ap;
+        double new_r_squared_norm{0.0};
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            x[i] = x[i] + alpha * p[i];
+            r[i] = r[i] - alpha * Ap[i];
+            new_r_squared_norm += r[i].dot(r[i]);
+        }
+        r_squared_norm = new_r_squared_norm;
+        iterations += 1;
+        if (r_squared_norm <= squared_tolerance or iterations >= maximum_iterations)
+        {
+            break;
+        }
+        KrylovVector Ar = apply_A(grid, snow, krylov_nodes, r, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+        double Ar_dot_Ap{0.0};
+        double beta_CR{0.0};
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            Ar_dot_Ap += Ar[i].dot(Ap[i]);
+        }
+        beta_CR = -Ar_dot_Ap / Ap_dot_Ap;
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            p[i] = r[i] + beta_CR * p[i];
+            Ap[i] = Ar[i] + beta_CR * Ap[i];
+        }
+    }
+    if (r_squared_norm > squared_tolerance)
+    {
+        std::cout << "Maximum iterations reached, no convergaence achieved\n" << "achieved r squared norm: " << r_squared_norm << '\n';
+    }
+    else
+    {
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            krylov_nodes[i]->velocity = x[i];
+        }
+    }
+}
+
 void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha)
 {
     Eigen::Vector3d v_pic = Eigen::Vector3d::Zero();
@@ -470,9 +545,10 @@ void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha
 
 void particle_collisions(Particle& particle, const std::vector<CollisionBody> & colliders)
 {
+    bool required = true;
     for (const CollisionBody& body : colliders)
     {
-        particle.v_p = collision_helper(particle.x_p, particle.v_p, body);
+        particle.v_p = collision_helper(particle.x_p, particle.v_p, body, required);
     }
 }
 
@@ -554,6 +630,105 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
     auto end_grid_collisions = std::chrono::steady_clock::now();
 
     timings.grid_collisions += std::chrono::duration<double, std::milli>(end_grid_collisions - start_grid_collisions).count();
+
+    auto start_stress = std::chrono::steady_clock::now();
+    #pragma omp parallel for
+    for (Particle& particle : snow)
+    {
+        stress_update(grid, particle, grid_spacing, time_step, max_compression, max_stretch);
+    }
+    auto end_stress = std::chrono::steady_clock::now();
+
+    timings.stress_update += std::chrono::duration<double, std::milli>(end_stress - start_stress).count();
+
+    auto start_G2P = std::chrono::steady_clock::now();
+    #pragma omp parallel for
+    for (Particle& particle : snow)
+    {
+        G2P(grid, particle, grid_spacing, alpha);
+    }
+    auto end_G2P = std::chrono::steady_clock::now();
+
+    timings.g2p += std::chrono::duration<double, std::milli>(end_G2P - start_G2P).count();
+
+    auto start_particle_collisions = std::chrono::steady_clock::now();
+    for (Particle& particle : snow)
+    {
+        particle_collisions(particle, colliders);
+    }
+    auto end_particle_collisions = std::chrono::steady_clock::now();
+
+    timings.particle_collisions += std::chrono::duration<double, std::milli>(end_particle_collisions - start_particle_collisions).count();
+
+    auto start_position_update = std::chrono::steady_clock::now();
+    for (Particle& particle : snow)
+    {
+        position_update(particle, time_step);
+    }
+    auto end_position_update = std::chrono::steady_clock::now();
+
+    timings.position_update += std::chrono::duration<double, std::milli>(end_position_update - start_position_update).count();
+
+    return grid;
+}
+
+Grid semi_implicit_step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, double squared_tolerance, int maximum_iterations, double beta, StepTimings& timings)
+{
+    Grid grid;
+    grid.reserve(170000);
+
+    auto start_stencil = std::chrono::steady_clock::now();
+    #pragma omp parallel for schedule(static)
+    for (std::size_t i = 0; i < snow.size(); ++i)
+    {
+        stencils[i] = build_stencil(snow[i], grid_spacing);
+    }
+    auto end_stencil = std::chrono::steady_clock::now();
+
+    timings.stencil += std::chrono::duration<double, std::milli>(end_stencil - start_stencil).count();
+
+    auto start_P2G = std::chrono::steady_clock::now();
+    for (std::size_t i{0}; i < snow.size(); ++i)
+    {
+        P2G(grid, snow[i], stencils[i], grid_spacing);
+    }
+    std::vector<GridNode*> krylov_nodes = index_nodes(grid);
+    auto end_P2G = std::chrono::steady_clock::now();
+
+    timings.p2g += std::chrono::duration<double, std::milli>(end_P2G - start_P2G).count();
+
+    std::vector<Eigen::Matrix3d> stress_matrices(snow.size());
+    auto start_forces_constitutive = std::chrono::steady_clock::now();
+    for (std::size_t i{0}; i < snow.size(); ++i)
+    {
+        stress_matrices[i] = force_constitutive(snow[i], mu_0, lambda_0, hardening_coefficient);
+    }
+    auto end_forces_constitutive = std::chrono::steady_clock::now();
+
+    timings.forces_constitutive += std::chrono::duration<double, std::milli>(end_forces_constitutive - start_forces_constitutive).count();
+
+    auto start_forces_accumulative = std::chrono::steady_clock::now();
+    for (std::size_t i{0}; i < snow.size(); ++i)
+    {
+        force_grid_accumulation(grid, stress_matrices[i], snow[i], stencils[i]);
+    }
+    auto end_forces_accumulative = std::chrono::steady_clock::now();
+
+    timings.forces_accumulative += std::chrono::duration<double, std::milli>(end_forces_accumulative - start_forces_accumulative).count();
+
+    auto start_grid_velocity = std::chrono::steady_clock::now();
+    grid_velocity(grid, gravity, time_step);
+    auto end_grid_velocity = std::chrono::steady_clock::now();
+
+    timings.grid_velocity += std::chrono::duration<double, std::milli>(end_grid_velocity - start_grid_velocity).count();
+
+    auto start_grid_collisions = std::chrono::steady_clock::now();
+    grid_collisions(grid, colliders, grid_spacing);
+    auto end_grid_collisions = std::chrono::steady_clock::now();
+
+    timings.grid_collisions += std::chrono::duration<double, std::milli>(end_grid_collisions - start_grid_collisions).count();
+
+    Conjugate_residual(grid, snow, krylov_nodes, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficient, beta, squared_tolerance, maximum_iterations);
 
     auto start_stress = std::chrono::steady_clock::now();
     #pragma omp parallel for

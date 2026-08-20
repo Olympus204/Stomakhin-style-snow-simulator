@@ -12,6 +12,7 @@ double print_timings(StepTimings timings)
         timings.grid_velocity +
         timings.grid_collisions +
         timings.stress_update +
+        timings.cr +
         timings.g2p +
         timings.particle_collisions +
         timings.position_update;
@@ -23,6 +24,7 @@ double print_timings(StepTimings timings)
     std::cout << "Grid velocity: " << timings.grid_velocity << "ms  " << 100.0 * timings.grid_velocity / measured <<"% \n";
     std::cout << "Grid collisions: " << timings.grid_collisions << "ms  " << 100.0 * timings.grid_collisions / measured <<"% \n";
     std::cout << "Stress update: " << timings.stress_update << "ms  " << 100.0 * timings.stress_update / measured <<"% \n";
+    std::cout << "Conjugate Residual: " << timings.cr << "ms  " << 100.0 * timings.cr / measured <<"% \n";
     std::cout << "G2P: " << timings.g2p << "ms  " << 100.0 * timings.g2p / measured <<"% \n";
     std::cout << "Particle collisions: " << timings.particle_collisions << "ms  " << 100.0 * timings.particle_collisions / measured <<"% \n";
     std::cout << "Position update: " << timings.position_update << "ms  " << 100.0 * timings.position_update / measured <<"% \n";

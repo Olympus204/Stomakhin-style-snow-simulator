@@ -17,6 +17,7 @@ struct GridNode
     Eigen::Vector3d force = Eigen::Vector3d::Zero();
     Eigen::Vector3d delta_v = Eigen::Vector3d::Zero();
     Eigen::Vector3d delta_force = Eigen::Vector3d::Zero();
+    bool colision_constrained = false;
 };
 
 struct GridIndex
@@ -88,6 +89,7 @@ void stress_update(const Grid& grid, Particle& particle, double grid_spacing, do
 Eigen::Matrix3d deformation_differential(const Grid& grid, const Particle& particle, double grid_spacing, double time_step);
 void force_differential(Grid& grid, const Particle& particle, double grid_spacing, double time_step, double mu_0, double lambda_0, double hardening_coefficient);
 KrylovVector apply_A(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, const KrylovVector& q, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta);
+void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta, double squared_tolerance, int maximum_iterations);
 void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha);
 void particle_collisions(Particle& particle, const std::vector<CollisionBody> & colliders);
 void position_update(Particle& particle, double time_step);

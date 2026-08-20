@@ -1,0 +1,74 @@
+[
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/main.cpp.o -c /home/gwen/Code/snow-simulator/src/main.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/main.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/grid.cpp.o -c /home/gwen/Code/snow-simulator/src/grid.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/grid.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/grid.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/collision.cpp.o -c /home/gwen/Code/snow-simulator/src/collision.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/collision.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/collision.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/import.cpp.o -c /home/gwen/Code/snow-simulator/src/import.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/import.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/import.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/export.cpp.o -c /home/gwen/Code/snow-simulator/src/export.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/export.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/export.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_sim.dir/src/debug.cpp.o -c /home/gwen/Code/snow-simulator/src/debug.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/debug.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_sim.dir/src/debug.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/tests/snow_tests.cpp.o -c /home/gwen/Code/snow-simulator/tests/snow_tests.cpp",
+  "file": "/home/gwen/Code/snow-simulator/tests/snow_tests.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/tests/snow_tests.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/src/grid.cpp.o -c /home/gwen/Code/snow-simulator/src/grid.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/grid.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/src/grid.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/src/collision.cpp.o -c /home/gwen/Code/snow-simulator/src/collision.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/collision.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/src/collision.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/src/import.cpp.o -c /home/gwen/Code/snow-simulator/src/import.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/import.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/src/import.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/src/export.cpp.o -c /home/gwen/Code/snow-simulator/src/export.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/export.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/src/export.cpp.o"
+},
+{
+  "directory": "/home/gwen/Code/snow-simulator/build-debug",
+  "command": "/usr/bin/c++ -I/home/gwen/Code/snow-simulator/include -isystem /usr/include/eigen3 -g -std=c++20 -Wall -Wextra -Wpedantic -fopenmp -o CMakeFiles/snow_tests.dir/src/debug.cpp.o -c /home/gwen/Code/snow-simulator/src/debug.cpp",
+  "file": "/home/gwen/Code/snow-simulator/src/debug.cpp",
+  "output": "/home/gwen/Code/snow-simulator/build-debug/CMakeFiles/snow_tests.dir/src/debug.cpp.o"
+}
+]
