@@ -4,6 +4,12 @@ import csv
 from pathlib import Path
 from mathutils import Vector
 
+RAY_DIRECTIONS = (
+    Vector((1.0, 0.371, 0.529)).normalized(),
+    Vector((-0.427, 1.0, 0.233)).normalized(),
+    Vector((0.191, -0.463, 1.0)).normalized(),
+)
+
 
 # Per-object settings
 
@@ -56,22 +62,16 @@ def world_bounds(obj):
     return min_corner, max_corner
 
 
-def point_inside_mesh(obj, world_point):
-    inverse = obj.matrix_world.inverted()
-
-    local_point = inverse @ world_point
-
-    direction = Vector(
-        (1.0, 0.371, 0.529)
-    ).normalized()
-
+def ray_inside(obj, local_point, direction):
     intersections = 0
     origin = local_point.copy()
 
-    while True:
+    epsilon = 1e-5
+
+    for _ in range(256):
         hit, location, normal, face_index = obj.ray_cast(
             origin,
-            direction
+            direction,
         )
 
         if not hit:
@@ -79,10 +79,29 @@ def point_inside_mesh(obj, world_point):
 
         intersections += 1
 
-        origin = location + direction * 1e-6
+        origin = (
+            location
+            + direction * epsilon
+        )
 
     return intersections % 2 == 1
 
+def point_inside_mesh(obj, world_point):
+    inverse = obj.matrix_world.inverted_safe()
+
+    local_point = inverse @ world_point
+
+    inside_votes = 0
+
+    for direction in RAY_DIRECTIONS:
+        if ray_inside(
+            obj,
+            local_point,
+            direction,
+        ):
+            inside_votes += 1
+
+    return inside_votes >= 2
 
 def seed_mesh(obj, spacing):
     min_corner, max_corner = world_bounds(obj)
