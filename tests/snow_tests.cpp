@@ -6,6 +6,14 @@
 #include "snow/grid.hpp"
 #include "snow/particle.hpp"
 
+void require(bool condition, const char* message)
+{
+    if (!condition)
+    {
+        throw std::runtime_error(message);
+    }
+}
+
 void run_test(const char* name, void (*test)())
 {
     std::cout << "Running " << name << "... ";
@@ -28,11 +36,11 @@ void spline_test()
     double e = N(1.5, 0.75);
     double f = N(0.75, 1.5);
 
-    assert(difference(a, 2.0/3.0) < 1e-10);
-    assert(difference(b, 1.0/6.0) < 1e-10);
-    assert(c == 0);
-    assert(d == 0);
-    assert(difference(e,f) < 1e-10);
+    require(difference(a, 2.0/3.0) < 1e-10, "spline error 1");
+    require(difference(b, 1.0/6.0) < 1e-10, "spline error 2");
+    require(c == 0, "spline error 3");
+    require(d == 0, "spline error 4");
+    require(difference(e,f) < 1e-10, "spline error 5");
 }
 
 void N_dash_test()
@@ -44,11 +52,11 @@ void N_dash_test()
     double e = N_dash(0,2);
     double f = N_dash(0,0.5);
 
-    assert(difference(a, -1 * b) < 1e-10);
-    assert(difference(c, 0) < 1e-10);
-    assert(difference(d, -0.5) < 1e-10);
-    assert(difference(e, 0) < 1e-10);
-    assert(difference(f, -0.625) < 1e-10);
+    require(difference(a, -1 * b) < 1e-10, "N` error 1");
+    require(difference(c, 0) < 1e-10, "N` error 2");
+    require(difference(d, -0.5) < 1e-10, "N` error 3");
+    require(difference(e, 0) < 1e-10, "N` error 4");
+    require(difference(f, -0.625) < 1e-10, "N` error 5");
 }
 
 void P2G_test()
@@ -63,9 +71,9 @@ void P2G_test()
         total_mass += node.mass;
         total_momentum += node.momentum;
     }
-    assert(difference(total_mass, 2) < 1e-10);
+    require(difference(total_mass, 2) < 1e-10, "P2G mass error");
     Eigen::Vector3d momentum_difference = total_momentum - Eigen::Vector3d{6, -4, 1};
-    assert(momentum_difference.norm() < 1e-10);
+    require(momentum_difference.norm() < 1e-10, "P2G momentum error");
 }
 
 void overlap_test()
@@ -82,9 +90,9 @@ void overlap_test()
         total_mass += node.mass;
         total_momentum += node.momentum;
     }
-    assert(difference(total_mass, 3.5) < 1e-10);
+    require(difference(total_mass, 3.5) < 1e-10, "P2G overlap mass error");
     Eigen::Vector3d momentum_difference = total_momentum - Eigen::Vector3d{4.5,2,4};
-    assert(momentum_difference.norm() < 1e-10);
+    require(momentum_difference.norm() < 1e-10, "P2G overlap momentum error");
 }
 
 void translation_test()
@@ -107,9 +115,9 @@ void translation_test()
         {
             assert(false);
         }
-        assert(difference(node.mass, grid_b.find(translated_grid)->second.mass) < 1e-10);
+        require(difference(node.mass, grid_b.find(translated_grid)->second.mass) < 1e-10, "P2G translation mass error");
         Eigen::Vector3d momentum_difference = node.momentum - grid_b.find(translated_grid)->second.momentum;
-        assert(momentum_difference.norm() < 1e-10);
+        require(momentum_difference.norm() < 1e-10, "P2G translation momentum error");
     }
 }
 
@@ -119,7 +127,7 @@ void volume_test()
     Particle particle{{1,2,3}, {1,2,3}, 1, 7};
     P2G(grid, particle, 0.5);
     calculate_volume(grid, particle, 0.5);
-    assert(difference(particle.V_p0, 1) < 1e-10);
+    require(difference(particle.V_p0, 1) < 1e-10, "P2G volume error");
 }
 
 void force_zero_test()
@@ -131,7 +139,7 @@ void force_zero_test()
     force_calculation(grid, particle, 0.5, 1, 1, 0);
     for (const auto& [index, node] : grid)
     {
-        assert(node.force.norm() < 1e-10);
+        require(node.force.norm() < 1e-10, "zero force test error");
     }
 }
 
@@ -142,15 +150,15 @@ void force_non_zero_test()
     particle.F_E.col(0) << 0.8, 0, 0;
     P2G(grid, particle, 1);
     force_calculation(grid, particle, 1, 1, 1, 0);
-    assert(difference(grid.find({0,0,0})->second.force[0], -0.06888020833) < 1e-10);
-    assert(difference(grid.find({0,0,0})->second.force[1], -0.02296006944) < 1e-10);
-    assert(difference(grid.find({0,0,0})->second.force[2], -0.02296006944) < 1e-10);
+    require(difference(grid.find({0,0,0})->second.force[0], -0.06888020833) < 1e-10, "non zero force test error 1");
+    require(difference(grid.find({0,0,0})->second.force[1], -0.02296006944) < 1e-10, "non zero force test error 2");
+    require(difference(grid.find({0,0,0})->second.force[2], -0.02296006944) < 1e-10, "non zero force test error 3");
     Eigen::Vector3d total_force = Eigen::Vector3d::Zero();
     for (const auto& [index, node] : grid)
     {
         total_force += node.force;
     }
-    assert(difference(total_force.norm(), 0) < 1e-10);
+    require(difference(total_force.norm(), 0) < 1e-10, "Non zero force test error");
 }
 
 void velocity_test()
@@ -163,12 +171,12 @@ void velocity_test()
     grid[{0,0,1}].force = {2,-4,1};
     Eigen::Vector3d gravity = {0,-9.81,0};
     grid_velocity(grid, gravity, 0.01);
-    assert(difference(grid.find({0,0,0})->second.velocity[0], 3.01) < 1e-10);
-    assert(difference(grid.find({0,0,0})->second.velocity[1], 1.8819) < 1e-10);
-    assert(difference(grid.find({0,0,0})->second.velocity[2], 0.005) < 1e-10);
-    assert(difference(grid.find({0,0,1})->second.velocity[0], 0) < 1e-10);
-    assert(difference(grid.find({0,0,1})->second.velocity[1], 0) < 1e-10);
-    assert(difference(grid.find({0,0,1})->second.velocity[2], 0) < 1e-10);
+    require(difference(grid.find({0,0,0})->second.velocity[0], 3.01) < 1e-10, "velocity test error 1");
+    require(difference(grid.find({0,0,0})->second.velocity[1], 1.8819) < 1e-10, "velocity test error 2");
+    require(difference(grid.find({0,0,0})->second.velocity[2], 0.005) < 1e-10, "velocity test error 3");
+    require(difference(grid.find({0,0,1})->second.velocity[0], 0) < 1e-10, "velocity test error 4");
+    require(difference(grid.find({0,0,1})->second.velocity[1], 0) < 1e-10, "velocity test error 5");
+    require(difference(grid.find({0,0,1})->second.velocity[2], 0) < 1e-10, "velocity test error 6");
 }
 
 void collision_outside_grid_test()
@@ -179,7 +187,7 @@ void collision_outside_grid_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 1));
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,1,0})->second.velocity - Eigen::Vector3d{2,-3,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "collision outside grid test error");
 }
 
 void escaping_collision_grid_test()
@@ -190,7 +198,7 @@ void escaping_collision_grid_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 1));
     grid_collisions(grid, colliders, 1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{2,3,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "escaping colision grid test error");
 }
 
 void sticking_grid_test()
@@ -201,7 +209,7 @@ void sticking_grid_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 0.6));
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{0,0,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "sticking grid test error");
 }
 
 void sliding_grid_test()
@@ -212,7 +220,7 @@ void sliding_grid_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 0.2));
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{1.4,0,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "sliding grid test error");
 }
 
 void rigid_translation_test()
@@ -233,8 +241,8 @@ void rigid_translation_test()
     stress_update(grid, particle, 0.1, 0.1, 0.1, 0.1);
     Eigen::Matrix3d elastic_change = particle.F_E - Eigen::Matrix3d::Identity();
     Eigen::Matrix3d plastic_change = particle.F_P - Eigen::Matrix3d::Identity();
-    assert(elastic_change.norm() < 1e-10);
-    assert(plastic_change.norm() < 1e-10);
+    require(elastic_change.norm() < 1e-10, "rigid translation elastic error");
+    require(plastic_change.norm() < 1e-10, "rigid translation plastic error");
 }
 
 void elastic_test()
@@ -259,8 +267,8 @@ void elastic_test()
 
     Eigen::Matrix3d elastic_change = particle.F_E - target_F_E;
     Eigen::Matrix3d plastic_change = particle.F_P - target_F_P;
-    assert(elastic_change.norm() < 1e-10);
-    assert(plastic_change.norm() < 1e-10);
+    require(elastic_change.norm() < 1e-10, "elastic test elastic error");
+    require(plastic_change.norm() < 1e-10, "elastic test plastic error");
 }
 
 void plastic_test()
@@ -287,9 +295,9 @@ void plastic_test()
     Eigen::Matrix3d elastic_change = particle.F_E - target_F_E;
     Eigen::Matrix3d plastic_change = particle.F_P - target_F_P;
     Eigen::Matrix3d Trial_f_change = particle.F_E * particle.F_P - trial_F;
-    assert(elastic_change.norm() < 1e-10);
-    assert(plastic_change.norm() < 1e-10);
-    assert(Trial_f_change.norm() < 1e-10);
+    require(elastic_change.norm() < 1e-10, "plastic test elastic error");
+    assert(plastic_change.norm() < 1e-10, "plastic test plastic error");
+    assert(Trial_f_change.norm() < 1e-10, "plastic test trial f error");
 }
 
 void linear_velocity_field_test()
@@ -314,8 +322,8 @@ void linear_velocity_field_test()
 
     Eigen::Matrix3d elastic_change = particle.F_E - target_F_E;
     Eigen::Matrix3d plastic_change = particle.F_P - target_F_P;
-    assert(elastic_change.norm() < 1e-10);
-    assert(plastic_change.norm() < 1e-10);
+    require(elastic_change.norm() < 1e-10, "linear velocity field elastic error");
+    assert(plastic_change.norm() < 1e-10, "linear velocity field plastic error");
 }
 
 void G2P_test()
@@ -331,7 +339,7 @@ void G2P_test()
     }
     G2P(grid, particle, 0.1, 0.95);
     Eigen::Vector3d v_difference_from_expected = particle.v_p - Eigen::Vector3d{2,2,4};
-    assert(v_difference_from_expected.norm() < 1e-10);
+    require(v_difference_from_expected.norm() < 1e-10, "G2P velocity error");
 }
 
 void FLIP_PIC_test()
@@ -347,7 +355,7 @@ void FLIP_PIC_test()
     }
     G2P(grid, particle, 0.1, 0.95);
     Eigen::Vector3d v_difference_from_expected = particle.v_p - Eigen::Vector3d{11.55,0,0};
-    assert(v_difference_from_expected.norm() < 1e-10);
+    require(v_difference_from_expected.norm() < 1e-10, "FLIP PIC velocity error");
 }
 
 void collision_outside_particle_test()
@@ -357,7 +365,7 @@ void collision_outside_particle_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 1));
     particle_collisions(particle, colliders);
     Eigen::Vector3d velocity_difference = particle.v_p - Eigen::Vector3d{2,-3,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "collision outside particle error");
 }
 
 void escaping_collision_particle_test()
@@ -367,7 +375,7 @@ void escaping_collision_particle_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 1));
     particle_collisions(particle, colliders);
     Eigen::Vector3d velocity_difference = particle.v_p - Eigen::Vector3d{2,3,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "escaping collision particle error");
 }
 
 void sticking_particle_test()
@@ -377,7 +385,7 @@ void sticking_particle_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 0.6));
     particle_collisions(particle, colliders);
     Eigen::Vector3d velocity_difference = particle.v_p - Eigen::Vector3d{0,0,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "sticking particle test error");
 }
 
 void sliding_particle_test()
@@ -387,7 +395,7 @@ void sliding_particle_test()
     colliders.push_back(make_plane({0,0,0}, {0,1,0}, 0.2));
     particle_collisions(particle, colliders);
     Eigen::Vector3d velocity_difference = particle.v_p - Eigen::Vector3d{1.4,0,0};
-    assert(velocity_difference.norm() < 1e-10);
+    require(velocity_difference.norm() < 1e-10, "sliding particle test error");
 }
 
 void position_update_test()
@@ -395,7 +403,7 @@ void position_update_test()
     Particle particle{{1,2,3}, {2,-1,0.5}, 1, 1};
     position_update(particle, 0.1);
     Eigen::Vector3d difference = particle.x_p - Eigen::Vector3d{1.2,1.9,3.05};
-    assert(difference.norm() < 1e-10);
+    require(difference.norm() < 1e-10, "position update error");
 }
 
 int main()
