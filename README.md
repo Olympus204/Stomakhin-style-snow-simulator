@@ -68,9 +68,7 @@ step and contains only nodes touched by particle interpolation stencils.
 ## Snow model
 The constitutive model follows the approach of Stomakhin et al. and splits
 the deformation gradient into elastic and plastic components:
-\[
-F = F_E F_P
-\]
+`F = F_E F_P`
 Elastic deformation determines the stress response, while singular values of
 the trial elastic deformation are projected to compression and stretch limits.
 The remaining deformation is transferred into the plastic component.
