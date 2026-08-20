@@ -79,7 +79,7 @@ and compact permanently, but cohesive regions do not explicitly crack into
 separate pieces.
 
 ## Blender workflow
-The Blender utilities in blender/ provide the front and back ends of the
+The Blender utilities in `blender/` provide the front and back ends of the
 simulation workflow.
 
 ### Particle seeding
@@ -166,7 +166,7 @@ Run the example simulation:
 ```bash
 ./build/snow_sim
 ```
-simulation frames are written to output/
+simulation frames are written to `output/`
 
 ## Tests
 
