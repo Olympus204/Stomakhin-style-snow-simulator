@@ -38,7 +38,6 @@ int main()
     std::vector<ParticleStencil> stencils(particles.size());
     setup(particles, 0.05);
     export_particles(particles, 0);
-    Grid grid;
     for (int frame{1}; frame <= frame_count; ++frame)
     {
         StepTimings timings;
@@ -46,7 +45,7 @@ int main()
 
         for(int substep{0}; substep < substeps_per_frame; ++substep)
         {
-            grid = step(particles, colliders, stencils, gravity, time_step, grid_spacing, mu_0, lambda_0, hardening, max_compression, max_stretch, flip_ratio, timings);
+            step(particles, colliders, stencils, gravity, time_step, grid_spacing, mu_0, lambda_0, hardening, max_compression, max_stretch, flip_ratio, timings);
         }
 
         auto frame_end = std::chrono::steady_clock::now();
