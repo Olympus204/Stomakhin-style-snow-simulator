@@ -10,14 +10,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(OpenMP REQUIRED)
 
-add_executable(snow_sim
-    src/main.cpp
+add_library(snow_core
     src/grid.cpp
     src/collision.cpp
     src/import.cpp
     src/export.cpp
     src/debug.cpp
-    )
+)
+
+add_executable(snow_sim src/main.cpp)
+target_link_libraries(snow_sim PRIVATE snow_core)
 
 target_include_directories(snow_sim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -31,14 +33,8 @@ target_compile_options(snow_sim PRIVATE
     -Wpedantic
 )
 
-add_executable(snow_tests
-    tests/snow_tests.cpp
-    src/grid.cpp
-    src/collision.cpp
-    src/import.cpp
-    src/export.cpp
-    src/debug.cpp
-)
+add_executable(snow_tests tests/snow_tests.cpp)
+target_link_libraries(snow_tests PRIVATE snow_core)
 
 target_include_directories(snow_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -51,3 +47,6 @@ target_compile_options(snow_tests PRIVATE
     -Wextra
     -Wpedantic
 )
+
+enable_testing()
+add_test(NAME snow_tests COMMAND snow_tests)
