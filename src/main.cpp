@@ -11,8 +11,19 @@
 
 int main()
 {
+    constexpr double grid_spacing = 0.05;
+    constexpr double time_step = 0.0005;
+    constexpr int substeps_per_frame = 80;
+    constexpr int frame_count = 50;
+
+// 80 x 0.0005 is 0.4 seconds, which is 25 fps
+    
     double Youngs_modulus{4.8e5};
     double Poisson_ratio{0.2};
+    constexpr double hardening = 10.0;
+    constexpr double max_compression = 0.025;
+    constexpr double max_stretch = 0.0075;
+    constexpr double flip_ratio = 0.95;
 
     double mu_0 = Youngs_modulus/ (2 * (1 + Poisson_ratio));
     double lambda_0 = (Youngs_modulus * Poisson_ratio)/((1 + Poisson_ratio) * (1 - 2 * Poisson_ratio));
@@ -28,14 +39,14 @@ int main()
     setup(particles, 0.05);
     export_particles(particles, 0);
     Grid grid;
-    for (int frame{1}; frame < 51; ++frame)
+    for (int frame{1}; frame <= frame_count; ++frame)
     {
         StepTimings timings;
         auto frame_start = std::chrono::steady_clock::now();
 
-        for(int substep{0}; substep < 400; ++substep)
+        for(int substep{0}; substep < substeps_per_frame; ++substep)
         {
-            grid = step(particles, colliders, stencils, gravity, 0.0001, 0.05, mu_0, lambda_0, 10, 0.025, 0.0075, 0.95, timings);
+            grid = step(particles, colliders, stencils, gravity, time_step, grid_spacing, mu_0, lambda_0, hardening, max_compression, max_stretch, flip_ratio, timings);
         }
 
         auto frame_end = std::chrono::steady_clock::now();
@@ -45,7 +56,5 @@ int main()
         double unnacounted_time = print_timings(timings);
         std::cout << "Unacounted for time: " << frame_time - unnacounted_time << "ms \n";
         export_particles(particles, frame);
-        std::cout << '\n';
-        std::cout << "Grid nodes: " << grid.size() << '\n' << "Buckets: " << grid.bucket_count() << '\n' << "Load factor: " << grid.load_factor() << '\n' << '\n';
     }
 }
