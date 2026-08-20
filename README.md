@@ -1,5 +1,7 @@
 # 3D MPM Snow Simulator
 
+[![CI](https://github.com/Olympus204/Stomakhin-style-snow-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/Olympus204/Stomakhin-style-snow-simulator/actions/workflows/ci.yml)
+
 A three-dimensional Material Point Method snow simulator written in C++20,
 based on the elastoplastic snow model described by Stomakhin et al.
 
