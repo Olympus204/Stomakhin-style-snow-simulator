@@ -10,6 +10,7 @@ struct StepTimings
     double grid_collisions{0.0};
     double stress_update{0.0};
     double cr{0.0};
+    int iterations{0};
     double g2p{0.0};
     double particle_collisions{0.0};
     double position_update{0.0};

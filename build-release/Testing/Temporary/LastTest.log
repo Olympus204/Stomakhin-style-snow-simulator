@@ -1,0 +1,43 @@
+Start testing: Aug 20 12:01 BST
+----------------------------------------------------------
+1/1 Testing: snow_tests
+1/1 Test: snow_tests
+Command: "/home/gwen/Code/snow-simulator/build-release/snow_tests"
+Directory: /home/gwen/Code/snow-simulator/build-release
+"snow_tests" start time: Aug 20 12:01 BST
+Output:
+----------------------------------------------------------
+Running Spline test... passed
+Running N' test... passed
+Running P2G test... passed
+Running Overlap test... passed
+Running Translation test... passed
+Running Volume test... passed
+Running Zero force test... passed
+Running Non-zero force test... passed
+Running Velocity test... passed
+Running Outside collider grid test... passed
+Running Escaping collision grid test... passed
+Running Sticking grid test... passed
+Running Sliding grid test... passed
+Running Rigid translation stress test... passed
+Running Elastic stress test... passed
+Running Plastic stress test... passed
+Running Linear velocity field test... passed
+Running G2P test... passed
+Running FLIP and PIC blend test... passed
+Running Outside collider particle test... passed
+Running Escaping collision particle test... passed
+Running Sticking particle test... passed
+Running Sliding particle test... passed
+Running Position update test... passed
+all tests passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"snow_tests" end time: Aug 20 12:01 BST
+"snow_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 20 12:01 BST

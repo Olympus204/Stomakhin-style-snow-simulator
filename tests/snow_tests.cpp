@@ -75,7 +75,9 @@ void constitutive_differential_test()
     double hardening_coefficient{0.0};
 
     double epsilon{1e-6};
-    Eigen::Matrix3d analytical = constitutive_differential(particle, delta_F, mu_0, lambda_0, hardening_coefficient);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, 0));
+    Eigen::Matrix3d analytical = constitutive_differential(delta_F, linearisations[0]);
 
     Particle plus = particle;
     Particle minus = particle;
@@ -83,8 +85,8 @@ void constitutive_differential_test()
     plus.F_E = particle.F_E + epsilon * delta_F;
     minus.F_E = particle.F_E - epsilon * delta_F;
 
-    Eigen::Matrix3d P_plus = force_constitutive(plus, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Matrix3d P_minus = force_constitutive(minus, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Matrix3d P_plus = force_constitutive(plus, linearisations[0]);
+    Eigen::Matrix3d P_minus = force_constitutive(minus, linearisations[0]);
     Eigen::Matrix3d numerical = (P_plus - P_minus) / (2.0 * epsilon);
     double error = (analytical - numerical).norm();
     double relative_error = error / std::max(1.0, numerical.norm());
@@ -115,7 +117,9 @@ void constitutive_differential_stretch_test()
     double hardening_coefficient{0.0};
 
     double epsilon{1e-6};
-    Eigen::Matrix3d analytical = constitutive_differential(particle, delta_F, mu_0, lambda_0, hardening_coefficient);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, 0));
+    Eigen::Matrix3d analytical = constitutive_differential(delta_F, linearisations[0]);
 
     Particle plus = particle;
     Particle minus = particle;
@@ -123,8 +127,8 @@ void constitutive_differential_stretch_test()
     plus.F_E = particle.F_E + epsilon * delta_F;
     minus.F_E = particle.F_E - epsilon * delta_F;
 
-    Eigen::Matrix3d P_plus = force_constitutive(plus, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Matrix3d P_minus = force_constitutive(minus, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Matrix3d P_plus = force_constitutive(plus, linearisations[0]);
+    Eigen::Matrix3d P_minus = force_constitutive(minus, linearisations[0]);
     Eigen::Matrix3d numerical = (P_plus - P_minus) / (2.0 * epsilon);
     double error = (analytical - numerical).norm();
     double relative_error = error / std::max(1.0, numerical.norm());
@@ -155,7 +159,9 @@ void constitutive_differential_shear_test()
     double hardening_coefficient{0.0};
 
     double epsilon{1e-6};
-    Eigen::Matrix3d analytical = constitutive_differential(particle, delta_F, mu_0, lambda_0, hardening_coefficient);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, 0));
+    Eigen::Matrix3d analytical = constitutive_differential(delta_F, linearisations[0]);
 
     Particle plus = particle;
     Particle minus = particle;
@@ -163,8 +169,8 @@ void constitutive_differential_shear_test()
     plus.F_E = particle.F_E + epsilon * delta_F;
     minus.F_E = particle.F_E - epsilon * delta_F;
 
-    Eigen::Matrix3d P_plus = force_constitutive(plus, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Matrix3d P_minus = force_constitutive(minus, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Matrix3d P_plus = force_constitutive(plus, linearisations[0]);
+    Eigen::Matrix3d P_minus = force_constitutive(minus, linearisations[0]);
     Eigen::Matrix3d numerical = (P_plus - P_minus) / (2.0 * epsilon);
     double error = (analytical - numerical).norm();
     double relative_error = error / std::max(1.0, numerical.norm());
@@ -195,7 +201,9 @@ void constitutive_differential_rigid_test()
     double hardening_coefficient{0.0};
 
     double epsilon{1e-6};
-    Eigen::Matrix3d analytical = constitutive_differential(particle, delta_F, mu_0, lambda_0, hardening_coefficient);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, 0));
+    Eigen::Matrix3d analytical = constitutive_differential(delta_F, linearisations[0]);
 
     Particle plus = particle;
     Particle minus = particle;
@@ -203,8 +211,8 @@ void constitutive_differential_rigid_test()
     plus.F_E = particle.F_E + epsilon * delta_F;
     minus.F_E = particle.F_E - epsilon * delta_F;
 
-    Eigen::Matrix3d P_plus = force_constitutive(plus, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Matrix3d P_minus = force_constitutive(minus, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Matrix3d P_plus = force_constitutive(plus, linearisations[0]);
+    Eigen::Matrix3d P_minus = force_constitutive(minus, linearisations[0]);
     Eigen::Matrix3d numerical = (P_plus - P_minus) / (2.0 * epsilon);
     double error = (analytical - numerical).norm();
     double relative_error = error / std::max(1.0, numerical.norm());
@@ -237,7 +245,9 @@ void constitutive_differential_non_trivial_test()
     double hardening_coefficient{0.0};
 
     double epsilon{1e-6};
-    Eigen::Matrix3d analytical = constitutive_differential(particle, delta_F, mu_0, lambda_0, hardening_coefficient);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, 0));
+    Eigen::Matrix3d analytical = constitutive_differential(delta_F, linearisations[0]);
 
     Particle plus = particle;
     Particle minus = particle;
@@ -245,8 +255,8 @@ void constitutive_differential_non_trivial_test()
     plus.F_E = particle.F_E + epsilon * delta_F;
     minus.F_E = particle.F_E - epsilon * delta_F;
 
-    Eigen::Matrix3d P_plus = force_constitutive(plus, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Matrix3d P_minus = force_constitutive(minus, mu_0, lambda_0, hardening_coefficient);
+    Eigen::Matrix3d P_plus = force_constitutive(plus, linearisations[0]);
+    Eigen::Matrix3d P_minus = force_constitutive(minus, linearisations[0]);
     Eigen::Matrix3d numerical = (P_plus - P_minus) / (2.0 * epsilon);
     double error = (analytical - numerical).norm();
     double relative_error = error / std::max(1.0, numerical.norm());
@@ -329,8 +339,9 @@ void force_zero_test()
     Grid grid;
     Particle particle{{1,2,3}, {1,2,3}, 1, 7};
     P2G(grid, particle, 0.5);
+    ParticleLinearisation linearisation = build_lineratisation(particle, 1, 1, 0);
     calculate_volume(grid, particle, 0.5);
-    force_calculation(grid, particle, 0.5, 1, 1, 0);
+    force_calculation(grid, particle, linearisation, 0.5);
     for (const auto& [index, node] : grid)
     {
         assert(node.force.norm() < 1e-10);
@@ -343,7 +354,8 @@ void force_non_zero_test()
     Particle particle{{0.5,0.5,0.5}, {0,0,0}, 1, 1};
     particle.F_E.col(0) << 0.8, 0, 0;
     P2G(grid, particle, 1);
-    force_calculation(grid, particle, 1, 1, 1, 0);
+    ParticleLinearisation linearisation = build_lineratisation(particle, 1, 1, 0);
+    force_calculation(grid, particle, linearisation, 1);
     assert(difference(grid.find({0,0,0})->second.force[0], -0.06888020833) < 1e-10);
     assert(difference(grid.find({0,0,0})->second.force[1], -0.02296006944) < 1e-10);
     assert(difference(grid.find({0,0,0})->second.force[2], -0.02296006944) < 1e-10);
@@ -382,6 +394,7 @@ void collision_outside_grid_test()
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,1,0})->second.velocity - Eigen::Vector3d{2,-3,0};
     assert(velocity_difference.norm() < 1e-10);
+    assert(grid.find({0,1,0})->second.colision_constrained == false);
 }
 
 void escaping_collision_grid_test()
@@ -393,6 +406,7 @@ void escaping_collision_grid_test()
     grid_collisions(grid, colliders, 1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{2,3,0};
     assert(velocity_difference.norm() < 1e-10);
+    assert(grid.find({0,-1,0})->second.colision_constrained == false);
 }
 
 void sticking_grid_test()
@@ -404,6 +418,7 @@ void sticking_grid_test()
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{0,0,0};
     assert(velocity_difference.norm() < 1e-10);
+    assert(grid.find({0,-1,0})->second.colision_constrained == true);
 }
 
 void sliding_grid_test()
@@ -415,6 +430,7 @@ void sliding_grid_test()
     grid_collisions(grid, colliders, 0.1);
     Eigen::Vector3d velocity_difference = grid.find({0,-1,0})->second.velocity - Eigen::Vector3d{1.4,0,0};
     assert(velocity_difference.norm() < 1e-10);
+    assert(grid.find({0,-1,0})->second.colision_constrained == true);
 }
 
 void rigid_translation_test()
@@ -545,7 +561,9 @@ void deformation_differential_translation_test()
         }
     }
 
-    Eigen::Matrix3d delta_F = deformation_differential(grid, particle, 0.1, 0.02);
+    ParticleStencil stencil = build_stencil(particle, 0.1);
+
+    Eigen::Matrix3d delta_F = deformation_differential(particle, stencil, 0.02);
 
     assert(delta_F.norm() < 1e-10);
 }
@@ -571,8 +589,9 @@ void deformation_differential_linear_field_test()
             }
         }
     }
+    ParticleStencil stencil = build_stencil(particle, 0.1);
 
-    Eigen::Matrix3d delta_F = deformation_differential(grid, particle, 0.1, 0.1);
+    Eigen::Matrix3d delta_F = deformation_differential(particle, stencil, 0.1);
     Eigen::Matrix3d delta_F_expected = Eigen::Matrix3d::Zero();
     delta_F_expected(0,0) = -0.02;
 
@@ -586,14 +605,18 @@ void Aq_test()
     Grid grid;
     std::vector<Particle> snow;
     snow.push_back({{0,0,0}, {0,0,0}, 1, 1});
-    P2G(grid, snow[0], 0.1);
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
     KrylovVector q;
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         q.push_back({i + 1, 2 * i + 3, i + 2});
     }
-    KrylovVector Aq = apply_A(grid, snow, krylov_nodes, q, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
+    KrylovVector Aq = apply_A(snow, stencils, linearisations, krylov_nodes, q, 0.1, 0.5);
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         assert(((krylov_nodes[i]->mass * q[i]) - Aq[i]).norm() < 1e-10);
@@ -607,7 +630,9 @@ void Aq_linear_test()
     Grid grid;
     std::vector<Particle> snow;
     snow.push_back({{0,0,0}, {0,0,0}, 1, 1});
-    P2G(grid, snow[0], 0.1);
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
     KrylovVector q1;
     KrylovVector q2;
@@ -621,9 +646,11 @@ void Aq_linear_test()
     {
         q12.push_back(q1[i] + q2[i]);
     }
-    KrylovVector Aq1 = apply_A(grid, snow, krylov_nodes, q1, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
-    KrylovVector Aq2 = apply_A(grid, snow, krylov_nodes, q2, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
-    KrylovVector Aq12 = apply_A(grid, snow, krylov_nodes, q12, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
+    KrylovVector Aq1 = apply_A(snow, stencils, linearisations, krylov_nodes, q1, 0.1, 0.5);
+    KrylovVector Aq2 = apply_A(snow, stencils, linearisations, krylov_nodes, q2, 0.1, 0.5);
+    KrylovVector Aq12 = apply_A(snow, stencils, linearisations, krylov_nodes, q12, 0.1, 0.5);
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         assert((Aq12[i] - (Aq1[i] + Aq2[i])).norm() < 1e-10);
@@ -637,7 +664,9 @@ void Aq_symmetry_test()
     Grid grid;
     std::vector<Particle> snow;
     snow.push_back({{0,0,0}, {0,0,0}, 1, 1});
-    P2G(grid, snow[0], 0.1);
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
     KrylovVector x;
     KrylovVector y;
@@ -646,8 +675,10 @@ void Aq_symmetry_test()
         x.push_back({i + 1, 2 * i + 3, i + 2});
         y.push_back({i + 2, 3 * i + 2, 4 * i + 2});
     }
-    KrylovVector Ax = apply_A(grid, snow, krylov_nodes, x, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
-    KrylovVector Ay = apply_A(grid, snow, krylov_nodes, y, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
+    KrylovVector Ax = apply_A(snow, stencils, linearisations, krylov_nodes, x, 0.1, 0.5);
+    KrylovVector Ay = apply_A(snow, stencils, linearisations, krylov_nodes, y, 0.1, 0.5);
     double L{0.0};
     double R{0.0};
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
@@ -665,14 +696,18 @@ void CR_initial_residual_zero_test()
     Grid grid;
     std::vector<Particle> snow;
     snow.push_back({{0,0,0}, {0,0,0}, 1, 0});
-    P2G(grid, snow[0], 0.1);
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
     for (auto& [index, node] : grid)
     {
         node.mass = 1;
         node.velocity = {0,1,0};
     }
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
-    Conjugate_residual(grid, snow, krylov_nodes, 0.1, 0.1, mu_0, lambda_0, 0, 0.5, 1e-3, 50);
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
+    Conjugate_residual(grid, snow, stencils, linearisations, krylov_nodes, 0.1, 0.1, 0.5, 1e-3, 50);
     for (auto& [index, node] : grid)
     {
         assert((node.velocity - Eigen::Vector3d{0,1,0}).norm() < 1e-10);
@@ -690,7 +725,9 @@ void CR_non_trivial_test()
         1.05, 0, 0,
         0, 0.97, 0,
         0, 0, 1.02;
-    P2G(grid, snow[0], 0.1);
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
     KrylovVector b;
     for (auto& [index, node] : grid)
@@ -703,15 +740,17 @@ void CR_non_trivial_test()
         const GridNode& node = *krylov_nodes[i];
         b.push_back(node.velocity);
     }
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
     double R_squared_zero{0.0};
-    KrylovVector Ab = apply_A(grid, snow, krylov_nodes, b, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    KrylovVector Ab = apply_A(snow, stencils, linearisations, krylov_nodes, b, 0.1, 0.5);
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         R_squared_zero += (b[i] - Ab[i]).dot(b[i] - Ab[i]);
     }
     assert(R_squared_zero > 1e-10);
 
-    Conjugate_residual(grid, snow, krylov_nodes, 0.1, 0.1, mu_0, lambda_0, 0, 0.5, 1e-12, 200);
+    Conjugate_residual(grid, snow, stencils, linearisations, krylov_nodes, 0.1, 0.1, 0.5, 1e-12, 200);
     KrylovVector x;
     double R_squared{0.0};
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
@@ -719,12 +758,77 @@ void CR_non_trivial_test()
         const GridNode& node = *krylov_nodes[i];
         x.push_back(node.velocity);
     }
-    KrylovVector Ax = apply_A(grid, snow, krylov_nodes, x, 0.1, 0.1, mu_0, lambda_0, 0, 0.5);
+    KrylovVector Ax = apply_A(snow, stencils, linearisations, krylov_nodes, x, 0.1, 0.5);
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         R_squared += (b[i] - Ax[i]).dot(b[i] - Ax[i]);
     }
     assert(R_squared < 1e-12);
+}
+
+void CR_collision_test()
+{
+    double mu_0 = 2.0;
+    double lambda_0 = 3.0;
+    Grid grid;
+    std::vector<Particle> snow;
+    snow.push_back({{0.15,0.15,0.15}, {0,0,0}, 1, 0.01});
+    snow[0].F_E << 
+        1.05, 0, 0,
+        0, 0.97, 0,
+        0, 0, 1.02;
+    std::vector<ParticleStencil> stencils;
+    stencils.push_back(build_stencil(snow[0], 0.1));
+    P2G(grid, snow[0], stencils[0], 0.1);
+    std::vector<GridNode*> krylov_nodes = index_nodes(grid);
+    KrylovVector b;
+    for (auto& [index, node] : grid)
+    {
+        node.mass = 1;
+        node.velocity = {0.3 * 0.1 * index.i, -0.2 * 0.1 * index.j, 0.1 * 0.1 * index.k};
+    }
+    grid[{0,0,0}].colision_constrained = true;
+    grid[{0,0,0}].velocity = {0.4,-0.2,0.7};
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        b.push_back(node.velocity);
+    }
+    std::vector<ParticleLinearisation> linearisations;
+    linearisations.push_back(build_lineratisation(snow[0], mu_0, lambda_0, 0));
+    double R_squared_zero{0.0};
+    KrylovVector Ab = apply_A(snow, stencils, linearisations, krylov_nodes, b, 0.1, 0.5);
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        if (node.colision_constrained == false)
+        {
+            R_squared_zero += (b[i] - Ab[i]).dot(b[i] - Ab[i]);
+        }
+    }
+    assert(R_squared_zero > 1e-10);
+
+    Conjugate_residual(grid, snow, stencils, linearisations, krylov_nodes, 0.1, 0.1, 0.5, 1e-12, 200);
+    assert((grid[{0,0,0}].velocity - Eigen::Vector3d{0.4,-0.2,0.7}).norm() < 1e-10);
+
+    KrylovVector x;
+    double R_squared{0.0};
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        x.push_back(node.velocity);
+    }
+    KrylovVector Ax = apply_A(snow, stencils, linearisations, krylov_nodes, x, 0.1, 0.5);
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        const GridNode& node = *krylov_nodes[i];
+        if (node.colision_constrained == false)
+        {
+            R_squared += (b[i] - Ax[i]).dot(b[i] - Ax[i]);
+        }
+    }
+    assert(R_squared < 1e-12);
+
 }
 
 void G2P_test()
@@ -838,6 +942,7 @@ int main()
     run_test("Aq symmetry test", Aq_symmetry_test);
     run_test("CR initial residual zero test", CR_initial_residual_zero_test);
     run_test("CR non trivial test", CR_non_trivial_test);
+    run_test("CR collision test", CR_collision_test);
     run_test("G2P test", G2P_test);
     run_test("FLIP and PIC blend test", FLIP_PIC_test);
     run_test("Outside collider particle test", collision_outside_particle_test);

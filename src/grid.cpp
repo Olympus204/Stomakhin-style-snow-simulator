@@ -58,33 +58,40 @@ double N_dash(const double& grid_node, const double& particle_coordinate)
     return 0.0;
 }
 
-Eigen::Matrix3d constitutive_differential(const Particle& particle, const Eigen::Matrix3d& delta_f, double mu_0, double lambda_0, double hardening_coefficient)
+ParticleLinearisation build_lineratisation(const Particle& particle, double mu_0, double lambda_0, double hardening_coefficient)
 {
+    ParticleLinearisation linearisation;
     Eigen::Matrix3d F = particle.F_E;
-    double J = F.determinant();
-    Eigen::Matrix3d C = J * F.inverse().transpose();
-    double delta_J = C.cwiseProduct(delta_f).sum();
-    Eigen::Matrix3d delta_C = delta_J * F.inverse().transpose() - J * F.inverse().transpose() * delta_f.transpose() * F.inverse().transpose();
+    linearisation.J = F.determinant();
+    linearisation.F_transpose_inverse = F.transpose().inverse();
+    linearisation.C = linearisation.J * F.inverse().transpose();
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::Matrix3d U = svd.matrixU();
-    Eigen::Matrix3d V = svd.matrixV();
-    Eigen::Vector3d sigma = svd.singularValues();
-    Eigen::Matrix3d B = U.transpose() * delta_f * V;
+    linearisation.U = svd.matrixU();
+    linearisation.V = svd.matrixV();
+    linearisation.sigma = svd.singularValues();
+    double h = exp(hardening_coefficient * (1 - particle.F_P.determinant()));
+    linearisation.mu = mu_0 * h;
+    linearisation.lambda = lambda_0 * h;
+    return linearisation;
+}
+
+Eigen::Matrix3d constitutive_differential(const Eigen::Matrix3d& delta_f, ParticleLinearisation& linearisation)
+{
+    double delta_J = linearisation.C.cwiseProduct(delta_f).sum();
+    Eigen::Matrix3d delta_C = delta_J * linearisation.F_transpose_inverse - linearisation.J * linearisation.F_transpose_inverse * delta_f.transpose() * linearisation.F_transpose_inverse;
+    Eigen::Matrix3d B = linearisation.U.transpose() * delta_f * linearisation.V;
     Eigen::Matrix3d omega = Eigen::Matrix3d::Zero();
-    double omega_01 = (B(0,1) - B(1,0)) / (sigma(0) + sigma(1));
-    double omega_02 = (B(0,2) - B(2,0)) / (sigma(0) + sigma(2));
-    double omega_12 = (B(1,2) - B(2,1)) / (sigma(1) + sigma(2));
+    double omega_01 = (B(0,1) - B(1,0)) / (linearisation.sigma(0) + linearisation.sigma(1));
+    double omega_02 = (B(0,2) - B(2,0)) / (linearisation.sigma(0) + linearisation.sigma(2));
+    double omega_12 = (B(1,2) - B(2,1)) / (linearisation.sigma(1) + linearisation.sigma(2));
     omega(0,1) = omega_01;
     omega(1,0) = -omega_01;
     omega(0,2) = omega_02;
     omega(2,0) = -omega_02;
     omega(1,2) = omega_12;
     omega(2,1) = -omega_12;
-    Eigen::Matrix3d delta_R = U * omega * V.transpose();
-    double h = exp(hardening_coefficient * (1 - particle.F_P.determinant()));
-    double mu = mu_0 * h;
-    double lambda = lambda_0 * h;
-    Eigen::Matrix3d delta_P = 2 * mu * delta_f - 2 * mu * delta_R + lambda * C * delta_J + lambda * (J - 1) * delta_C;
+    Eigen::Matrix3d delta_R = linearisation.U * omega * linearisation.V.transpose();
+    Eigen::Matrix3d delta_P = 2 * linearisation.mu * delta_f - 2 * linearisation.mu * delta_R + linearisation.lambda * linearisation.C * delta_J + linearisation.lambda * (linearisation.J - 1) * delta_C;
     return delta_P;
 }
 
@@ -212,15 +219,10 @@ void calculate_volume (Grid& grid, Particle& particle, double grid_spacing)
     particle.V_p0 = particle.m_p / particle_density;
 }
 
-Eigen::Matrix3d force_constitutive(const Particle& particle, double mu_0, double lambda_0, double hardening_coefficient)
+Eigen::Matrix3d force_constitutive(const Particle& particle, ParticleLinearisation& linearistation)
 {
-    double hardening = std::exp(hardening_coefficient * (1.0 - particle.F_P.determinant()));
-    double mu = mu_0 * hardening;
-    double lambda = lambda_0 * hardening;
-    double J_e = particle.F_E.determinant();
-    Eigen::JacobiSVD<Eigen::Matrix3d> svd(particle.F_E, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::Matrix3d R_E = svd.matrixU() * svd.matrixV().transpose();
-    Eigen::Matrix3d dphidF_E = 2 * mu * (particle.F_E - R_E) + lambda * (J_e - 1) * J_e * particle.F_E.transpose().inverse();
+    Eigen::Matrix3d R_E = linearistation.U * linearistation.V.transpose();
+    Eigen::Matrix3d dphidF_E = 2 * linearistation.mu * (particle.F_E - R_E) + linearistation.lambda * (linearistation.J - 1) * linearistation.J * particle.F_E.transpose().inverse();
     return dphidF_E;
 }
 
@@ -234,9 +236,9 @@ void force_grid_accumulation(Grid& grid, const Eigen::Matrix3d& dphidF_E, const 
     }
 }
 
-void force_calculation(Grid& grid,const Particle& particle,double grid_spacing,double mu_0,double lambda_0,double hardening_coefficient)
+void force_calculation(Grid& grid,const Particle& particle, ParticleLinearisation& linearisation, double grid_spacing)
 {
-    Eigen::Matrix3d stress = force_constitutive(particle,mu_0,lambda_0,hardening_coefficient);
+    Eigen::Matrix3d stress = force_constitutive(particle, linearisation);
     ParticleStencil stencil = build_stencil(particle, grid_spacing);
     for (StencilEntry& entry : stencil)
     {
@@ -340,87 +342,41 @@ void stress_update(const Grid& grid, Particle& particle, double grid_spacing, do
     particle.F_P = particle.F_E.inverse() * F_trial;
 }
 
-Eigen::Matrix3d deformation_differential(const Grid& grid, const Particle& particle, double grid_spacing, double time_step)
+Eigen::Matrix3d deformation_differential(const Particle& particle, ParticleStencil& stencil, double time_step)
 {
-    Eigen::Vector3d grid_position = particle.x_p / grid_spacing;
-    Eigen::Vector3i base = grid_position.array().floor().cast<int>() - Eigen::Vector3i::Ones().array();
     Eigen::Matrix3d delta_velocity_gradient = Eigen::Matrix3d::Zero();
-    for (int i{0}; i < 4; ++i)
+    for (StencilEntry& entry : stencil)
     {
-        for (int j{0}; j < 4; ++j)
-        {
-            for (int k{0}; k < 4; ++k)
-            {
-                GridIndex index{i + base[0], j + base[1], k + base[2]};
-                auto it = grid.find(index);
-                if (it == grid.end())
-                {
-                    continue;
-                }
-                const GridNode& node = it->second;
-                Eigen::Vector3d basis_gradient = Eigen::Vector3d::Zero();
-                double N_x = N(index.i, grid_position[0]);
-                double N_y = N(index.j, grid_position[1]);
-                double N_z = N(index.k, grid_position[2]);
-                double N_dash_x = N_dash(index.i, grid_position[0]);
-                double N_dash_y = N_dash(index.j, grid_position[1]);
-                double N_dash_z = N_dash(index.k, grid_position[2]);
-                basis_gradient(0) = N_dash_x * N_y * N_z * (1/grid_spacing);
-                basis_gradient(1) = N_x * N_dash_y * N_z * (1/grid_spacing);
-                basis_gradient(2) = N_x * N_y * N_dash_z * (1/grid_spacing);
-                delta_velocity_gradient += node.delta_v * basis_gradient.transpose();
-            }
-        }
+        assert(entry.node != nullptr);
+        delta_velocity_gradient += (entry.node->delta_v) * (entry.gradient.transpose());
     }
     return time_step * delta_velocity_gradient * particle.F_E;
 }
 
-void force_differential(Grid& grid, const Particle& particle, double grid_spacing, double time_step, double mu_0, double lambda_0, double hardening_coefficient)
+void force_differential(const Particle& particle, ParticleStencil& stencil, ParticleLinearisation& linearisation, double time_step)
 {
-    Eigen::Matrix3d delta_F_p = deformation_differential(grid, particle, grid_spacing, time_step);
-    Eigen::Matrix3d delta_P_p = constitutive_differential(particle, delta_F_p, mu_0, lambda_0, hardening_coefficient);
-    Eigen::Vector3d grid_position = particle.x_p / grid_spacing;
-    Eigen::Vector3i base = grid_position.array().floor().cast<int>() - Eigen::Vector3i::Ones().array();
-    for (int i{0}; i < 4; ++i)
+    Eigen::Matrix3d delta_F_p = deformation_differential(particle, stencil, time_step);
+    Eigen::Matrix3d delta_P_p = constitutive_differential(delta_F_p, linearisation);
+    Eigen::Matrix3d constant_term = -particle.V_p0 * delta_P_p * particle.F_E.transpose();
+    for (StencilEntry& entry : stencil)
     {
-        for (int j{0}; j < 4; ++j)
-        {
-            for (int k{0}; k < 4; ++k)
-            {
-                GridIndex index{i + base[0], j + base[1], k + base[2]};
-                auto it = grid.find(index);
-                if (it == grid.end())
-                {
-                    continue;
-                }
-                GridNode& node = it->second;
-                Eigen::Vector3d basis_gradient = Eigen::Vector3d::Zero();
-                double N_x = N(index.i, grid_position[0]);
-                double N_y = N(index.j, grid_position[1]);
-                double N_z = N(index.k, grid_position[2]);
-                double N_dash_x = N_dash(index.i, grid_position[0]);
-                double N_dash_y = N_dash(index.j, grid_position[1]);
-                double N_dash_z = N_dash(index.k, grid_position[2]);
-                basis_gradient(0) = N_dash_x * N_y * N_z * (1/grid_spacing);
-                basis_gradient(1) = N_x * N_dash_y * N_z * (1/grid_spacing);
-                basis_gradient(2) = N_x * N_y * N_dash_z * (1/grid_spacing);
-                node.delta_force += -particle.V_p0 * delta_P_p * particle.F_E.transpose() * basis_gradient;
-            }
-        }
+        assert(entry.node != nullptr);
+        entry.node->delta_force += constant_term * entry.gradient;
     }
 }
 
-KrylovVector apply_A(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, const KrylovVector& q, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta)
+KrylovVector apply_A(const std::vector<Particle>& snow, std::vector<ParticleStencil>& stencils, std::vector<ParticleLinearisation>& linearisations, const std::vector<GridNode*>& krylov_nodes, const KrylovVector& q, double time_step, double beta)
 {
     assert(q.size() == krylov_nodes.size());
+    assert(stencils.size() == snow.size());
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
         krylov_nodes[i]->delta_v = q[i];
         krylov_nodes[i]->delta_force = Eigen::Vector3d::Zero();
     }
-    for (const Particle& particle : snow)
+    for (std::size_t i{0}; i < snow.size(); ++i)
     {
-        force_differential(grid, particle, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent);
+        force_differential(snow[i], stencils[i], linearisations[i], time_step);
     }
     KrylovVector Aq(krylov_nodes.size(), Eigen::Vector3d::Zero());
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
@@ -432,7 +388,7 @@ KrylovVector apply_A(Grid& grid, const std::vector<Particle>& snow, const std::v
     return Aq;
 }
 
-void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std::vector<GridNode*>& krylov_nodes, double grid_spacing, double time_step, double mu_0, double lambda_0,double hardening_coefficent, double beta, double squared_tolerance, int maximum_iterations)
+double Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, std::vector<ParticleStencil>& stencils, std::vector<ParticleLinearisation>& linearisations, const std::vector<GridNode*>& krylov_nodes, double grid_spacing, double time_step, double beta, double squared_tolerance, int maximum_iterations)
 {
     KrylovVector x;
     KrylovVector b;
@@ -443,15 +399,33 @@ void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std
         x.push_back(node.velocity);
         b.push_back(node.mass * node.velocity);
     }
-    KrylovVector Ax = apply_A(grid, snow, krylov_nodes, x, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+    KrylovVector Ax = apply_A(snow, stencils, linearisations, krylov_nodes, x, time_step, beta);
     double r_squared_norm{0.0};
     for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
     {
-        r.push_back(b[i] - Ax[i]);
+        if (krylov_nodes[i]->colision_constrained == true)
+        {
+            r.push_back({0,0,0});
+        }
+        else
+        {
+            r.push_back(b[i] - Ax[i]);
+        }
         r_squared_norm += r[i].dot(r[i]);
     }
+    if (r_squared_norm <= squared_tolerance)
+        {
+            return 0;
+        }
     KrylovVector p = r;
-    KrylovVector Ap = apply_A(grid, snow, krylov_nodes, p, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+    KrylovVector Ap = apply_A(snow, stencils, linearisations, krylov_nodes, p, time_step, beta);
+    for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+    {
+        if (krylov_nodes[i]->colision_constrained == true)
+        {
+            Ap[i] = {0,0,0};
+        }
+    }
     int iterations{0};
     while (r_squared_norm > squared_tolerance and iterations < maximum_iterations)
     {
@@ -477,7 +451,14 @@ void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std
         {
             break;
         }
-        KrylovVector Ar = apply_A(grid, snow, krylov_nodes, r, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficent, beta);
+        KrylovVector Ar = apply_A(snow, stencils, linearisations, krylov_nodes, r, time_step, beta);
+        for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
+        {
+            if (krylov_nodes[i]->colision_constrained == true)
+            {
+                Ar[i] = {0,0,0};
+            }
+        }
         double Ar_dot_Ap{0.0};
         double beta_CR{0.0};
         for (std::size_t i{0}; i < krylov_nodes.size(); ++i)
@@ -502,6 +483,7 @@ void Conjugate_residual(Grid& grid, const std::vector<Particle>& snow, const std
             krylov_nodes[i]->velocity = x[i];
         }
     }
+    return iterations;
 }
 
 void G2P(const Grid& grid, Particle& particle, double grid_spacing, double alpha)
@@ -579,7 +561,6 @@ void setup(std::vector<Particle>& snow, double grid_spacing)
 Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, StepTimings& timings)
 {
     Grid grid;
-    grid.reserve(170000);
 
     auto start_stencil = std::chrono::steady_clock::now();
     #pragma omp parallel for schedule(static)
@@ -602,9 +583,15 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
 
     std::vector<Eigen::Matrix3d> stress_matrices(snow.size());
     auto start_forces_constitutive = std::chrono::steady_clock::now();
+    std::vector<ParticleLinearisation> linearisation;
+    for (const Particle& particle : snow)
+    {
+        linearisation.push_back(build_lineratisation(particle, mu_0, lambda_0, hardening_coefficient));
+    }
+
     for (std::size_t i{0}; i < snow.size(); ++i)
     {
-        stress_matrices[i] = force_constitutive(snow[i], mu_0, lambda_0, hardening_coefficient);
+        stress_matrices[i] = force_constitutive(snow[i], linearisation[i]);
     }
     auto end_forces_constitutive = std::chrono::steady_clock::now();
 
@@ -675,7 +662,6 @@ Grid step(std::vector<Particle>& snow,const std::vector<CollisionBody>& collider
 Grid semi_implicit_step(std::vector<Particle>& snow,const std::vector<CollisionBody>& colliders, std::vector<ParticleStencil>& stencils, Eigen::Vector3d gravity, double time_step, double grid_spacing, double mu_0, double lambda_0, double hardening_coefficient, double max_compression, double max_stretch, double alpha, double squared_tolerance, int maximum_iterations, double beta, StepTimings& timings)
 {
     Grid grid;
-    grid.reserve(170000);
 
     auto start_stencil = std::chrono::steady_clock::now();
     #pragma omp parallel for schedule(static)
@@ -699,9 +685,14 @@ Grid semi_implicit_step(std::vector<Particle>& snow,const std::vector<CollisionB
 
     std::vector<Eigen::Matrix3d> stress_matrices(snow.size());
     auto start_forces_constitutive = std::chrono::steady_clock::now();
+    std::vector<ParticleLinearisation> linearisations;
+    for (const Particle& particle : snow)
+    {
+        linearisations.push_back(build_lineratisation(particle, mu_0, lambda_0, hardening_coefficient));
+    }
     for (std::size_t i{0}; i < snow.size(); ++i)
     {
-        stress_matrices[i] = force_constitutive(snow[i], mu_0, lambda_0, hardening_coefficient);
+        stress_matrices[i] = force_constitutive(snow[i], linearisations[i]);
     }
     auto end_forces_constitutive = std::chrono::steady_clock::now();
 
@@ -728,7 +719,12 @@ Grid semi_implicit_step(std::vector<Particle>& snow,const std::vector<CollisionB
 
     timings.grid_collisions += std::chrono::duration<double, std::milli>(end_grid_collisions - start_grid_collisions).count();
 
-    Conjugate_residual(grid, snow, krylov_nodes, grid_spacing, time_step, mu_0, lambda_0, hardening_coefficient, beta, squared_tolerance, maximum_iterations);
+    double iterations;
+    auto start_cr = std::chrono::steady_clock::now();
+    iterations = Conjugate_residual(grid, snow, stencils, linearisations, krylov_nodes, grid_spacing, time_step, beta, squared_tolerance, maximum_iterations);
+    auto end_cr = std::chrono::steady_clock::now();
+    timings.iterations += iterations;
+    timings.cr += std::chrono::duration<double, std::milli>(end_cr - start_cr).count();
 
     auto start_stress = std::chrono::steady_clock::now();
     #pragma omp parallel for
