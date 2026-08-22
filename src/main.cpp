@@ -33,9 +33,9 @@ int main()
         StepTimings timings;
         auto frame_start = std::chrono::steady_clock::now();
 
-        for(int substep{0}; substep < 80; ++substep)
+        for(int substep{0}; substep < 40; ++substep)
         {
-            grid = semi_implicit_step(particles, colliders, stencils, gravity, 0.0005, 0.05, mu_0, lambda_0, 10, 0.025, 0.0075, 0.95, 1e-9, 300, 0.5, timings);
+            grid = semi_implicit_step(particles, colliders, stencils, gravity, 0.001, 0.05, mu_0, lambda_0, 10, 0.025, 0.0075, 0.95, 1e-9, 300, 0.5, timings);
         }
 
         auto frame_end = std::chrono::steady_clock::now();

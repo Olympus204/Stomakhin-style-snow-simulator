@@ -189,7 +189,10 @@ std::vector<GridNode*> index_nodes(Grid& grid)
         auto it = grid.find(index);
         if (it != grid.end())
         {
-            krylov_nodes.push_back(&it->second);
+            if(it->second.mass > 0)
+            {
+                krylov_nodes.push_back(&it->second);
+            }
         }
     }
     return krylov_nodes;
@@ -679,6 +682,7 @@ Grid semi_implicit_step(std::vector<Particle>& snow,const std::vector<CollisionB
         P2G(grid, snow[i], stencils[i], grid_spacing);
     }
     std::vector<GridNode*> krylov_nodes = index_nodes(grid);
+    std::vector<double> mass_scaling;
     auto end_P2G = std::chrono::steady_clock::now();
 
     timings.p2g += std::chrono::duration<double, std::milli>(end_P2G - start_P2G).count();
