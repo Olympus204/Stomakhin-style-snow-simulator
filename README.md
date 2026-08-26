@@ -10,7 +10,7 @@ through elastoplastic deformation and collision handling, with Blender tools
 for generating particle initial conditions from meshes and importing
 simulation output for visualisation.
 
-![3D MPM snow simulation](assets/snow-demo.gif)
+![3D MPM snow simulation](assets/snow.gif)
 
 ## Features
 
