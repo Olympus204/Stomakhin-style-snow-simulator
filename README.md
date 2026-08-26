@@ -122,7 +122,7 @@ a coherent three-dimensional particle body.
 
 The second example uses two independently seeded toroidal snow bodies colliding at high relative velocity, producing substantial compression, shear and permanent plastic deformation.
 
-![3D MPM snow simulation](assets/donut-demo.gif)
+![3D MPM snow simulation](assets/snow_collision.gif)
 
 The current constitutive model does not include fracture, so material remains
 cohesive under high deformation rather than breaking into separate fragments.
