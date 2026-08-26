@@ -120,7 +120,7 @@ Blender playback / rendering
 The solver produces permanent plastic deformation under impact while retaining
 a coherent three-dimensional particle body.
 
-The second example uses two independently seeded toroidal snow bodies colliding at high relative velocity, producing substantial compression, shear and permanent plastic deformation.
+The second example uses two independently seeded snow bodies colliding at high relative velocity, producing substantial compression, shear and permanent plastic deformation.
 
 ![3D MPM snow simulation](assets/snow_collision.gif)
 
