@@ -333,6 +333,7 @@ Tests are registered with CTest and can be run with:
 
 ```bash
 ctest --test-dir build --output-on-failure
+```
 
 ## Project structure
 
