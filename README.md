@@ -256,6 +256,14 @@ The lack of a fracture model is particularly visible under severe impact:
 material can deform extensively but does not explicitly separate through crack
 formation.
 
+### Snow accumulation on an incline
+
+A snowball rolls down a 30-degree incline through a seeded layer of snow,
+collecting and compacting material before shedding and depositing it further
+down the slope.
+
+![Snow accumulation simulation](assets/snow_accumulation.gif)
+
 ## Performance
 Performance optimisation was driven by per-stage timing instrumentation rather
 than inspection alone.
